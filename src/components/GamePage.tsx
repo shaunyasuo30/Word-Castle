@@ -1,3 +1,4 @@
+import BrandMark from './BrandMark'
 import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Expand, Heart, Home, Minimize, RotateCcw, Volume1, Volume2, VolumeX } from 'lucide-react'
 import { GameEngine } from '../game/GameEngine'
@@ -6,6 +7,7 @@ import { renderGame } from '../game/render'
 import type { GameSnapshot } from '../game/types'
 import { speechService, type Accent } from '../services/speechService'
 import { soundEffects } from '../services/soundEffects'
+import { getAudioVolume, setAudioVolume } from '../services/audioVolume'
 import type { VocabularySet } from '../types/vocabulary'
 import type { Theme } from '../theme'
 
@@ -23,6 +25,7 @@ function GameSession({ set, onHome, onReplay, theme = 'night' }: Props & { onRep
   const frameRef = useRef<HTMLDivElement>(null)
   const engineRef = useRef<GameEngine | null>(null)
   const [speed, setSpeed] = useState(savedSpeed)
+  const [volume, setVolume] = useState(getAudioVolume)
   const [muted, setMuted] = useState(() => soundEffects.isMuted())
   const [fullscreen, setFullscreen] = useState(false)
   const [snapshot, setSnapshot] = useState<GameSnapshot>(() => new GameEngine(set.words, GAME_CONFIG).snapshot)
@@ -112,6 +115,12 @@ function GameSession({ set, onHome, onReplay, theme = 'night' }: Props & { onRep
     engineRef.current?.setFallingSpeed(value)
     try { localStorage.setItem('word-castle:fall-speed', String(value)) } catch { /* keep current session setting */ }
   }
+  const changeVolume = (value: number) => {
+    const next = setAudioVolume(value)
+    setVolume(next)
+    soundEffects.applyVolume(next)
+    speechService.applyVolume(next)
+  }
   const toggleFullscreen = async () => {
     try {
       if (document.fullscreenElement) await document.exitFullscreen()
@@ -124,7 +133,7 @@ function GameSession({ set, onHome, onReplay, theme = 'night' }: Props & { onRep
   }
 
   return <div className="game-page page-shell">
-    <header className="topbar game-topbar"><button className="back-button" onClick={onHome}><ArrowLeft size={19} /> Thoát game</button><span className="brand-mini"><span className="brand-mark">W</span> WORD CASTLE</span><span className="topbar-tag">PHÒNG THỦ TỪ VỰNG</span></header>
+    <header className="topbar game-topbar"><button className="back-button" onClick={onHome}><ArrowLeft size={19} /> Thoát game</button><span className="brand-mini"><BrandMark /> WORD CASTLE</span><span className="topbar-tag">PHÒNG THỦ TỪ VỰNG</span></header>
     <div className="game-heading"><div><span className="eyebrow">BỘ TỪ: {set.name.toUpperCase()}</span><h1>Bảo vệ lâu đài!</h1></div><div className="game-heading-aside"><span className="game-level-chip">✦ SPELL QUEST</span><p>Nghe thật kỹ, gõ từng chữ cái và bắn hạ mục tiêu.</p></div></div>
     <div className="game-frame" ref={frameRef}>
       <div className="game-hud">
@@ -132,7 +141,7 @@ function GameSession({ set, onHome, onReplay, theme = 'night' }: Props & { onRep
         <div className="hud-progress"><small>TIẾN ĐỘ</small><strong>{Math.min(snapshot.wordNumber, snapshot.total)} <span>/ {snapshot.total} từ</span></strong></div>
         <div className="hud-lives"><small>MẠNG CÒN LẠI</small><div>{Array.from({ length: GAME_CONFIG.startingLives }, (_, i) => <Heart key={i} size={25} fill={i < snapshot.lives ? '#ff7487' : '#68738a'} color={i < snapshot.lives ? '#ff7487' : '#68738a'} />)}</div></div>
         <div className="hud-voice"><small>GIỌNG ĐỌC</small><div className="hud-voice-options"><div className="accent-switch" role="group" aria-label="Chọn giọng Anh Anh hoặc Anh Mỹ"><button className={accent === 'en-GB' ? 'active' : ''} aria-pressed={accent === 'en-GB'} onClick={() => changeAccent('en-GB')}>🇬🇧 UK</button><button className={accent === 'en-US' ? 'active' : ''} aria-pressed={accent === 'en-US'} onClick={() => changeAccent('en-US')}>🇺🇸 US</button></div><label className="voice-picker"><span className="sr-only">Giọng dự phòng</span><select aria-label="Chọn giọng dự phòng" value={voiceURI} onChange={event => changeVoice(event.target.value)} disabled={voices.length === 0}><option value="">Giọng đề xuất</option>{voices.map(voice => <option key={voice.voiceURI} value={voice.voiceURI}>{voice.name} · {voice.lang}</option>)}</select></label></div></div>
-        <div className="hud-speed"><label htmlFor="fall-speed">TỐC ĐỘ RƠI <b>{speed < 16 ? 'Chậm' : speed > 28 ? 'Nhanh' : 'Vừa'}</b></label><input id="fall-speed" type="range" min={FALL_SPEED.min} max={FALL_SPEED.max} step={FALL_SPEED.step} value={speed} onChange={event => changeSpeed(Number(event.target.value))} aria-label="Tốc độ rơi" /></div>
+        <div className="hud-speed"><label htmlFor="fall-speed">TỐC ĐỘ RƠI <b>{speed < 16 ? 'Chậm' : speed > 28 ? 'Nhanh' : 'Vừa'}</b></label><input id="fall-speed" type="range" min={FALL_SPEED.min} max={FALL_SPEED.max} step={FALL_SPEED.step} value={speed} onChange={event => changeSpeed(Number(event.target.value))} aria-label="Tốc độ rơi" /><label htmlFor="game-volume" className="volume-label">ÂM LƯỢNG <b>{volume}%</b></label><input id="game-volume" type="range" min="0" max="100" step="5" value={volume} onChange={event => changeVolume(Number(event.target.value))} aria-label="Âm lượng" /></div>
         <div className="hud-actions"><button type="button" className="hud-icon-button" onClick={toggleSounds} aria-label={muted ? 'Bật hiệu ứng âm thanh' : 'Tắt hiệu ứng âm thanh'} title={muted ? 'Bật hiệu ứng âm thanh' : 'Tắt hiệu ứng âm thanh'}>{muted ? <VolumeX size={19} /> : <Volume2 size={19} />}</button><button type="button" className="hud-icon-button" onClick={toggleFullscreen} aria-label={fullscreen ? 'Thu nhỏ màn hình gameplay' : 'Phóng to màn hình gameplay'} title={fullscreen ? 'Thu nhỏ màn hình gameplay' : 'Phóng to màn hình gameplay'}>{fullscreen ? <Minimize size={19} /> : <Expand size={19} />}</button></div>
       </div>
       <div className="mission-track" aria-label={`Đã xử lý ${snapshot.destroyed + snapshot.missed} trên ${snapshot.total} từ`}><span style={{ width: `${snapshot.total ? (snapshot.destroyed + snapshot.missed) / snapshot.total * 100 : 0}%` }} /></div>

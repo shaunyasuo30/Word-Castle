@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import GamePage from './GamePage'
 import { speechService } from '../services/speechService'
+import { soundEffects } from '../services/soundEffects'
 
 let nextFrame: FrameRequestCallback | undefined
 let clock = 0
@@ -84,6 +85,14 @@ it('shows the missed answer and offers speed, voice, fullscreen and cannon liste
   expect(screen.getByLabelText('Chọn giọng dự phòng')).toBeTruthy()
   fireEvent.change(screen.getByRole('slider', { name: 'Tốc độ rơi' }), { target: { value: '48' } })
   expect(localStorage.getItem('word-castle:fall-speed')).toBe('48')
+  const volume = screen.getByRole('slider', { name: 'Âm lượng' })
+  expect(volume.previousElementSibling?.textContent).toContain('ÂM LƯỢNG')
+  const effectVolume = vi.spyOn(soundEffects, 'applyVolume')
+  const speechVolume = vi.spyOn(speechService, 'applyVolume')
+  fireEvent.change(volume, { target: { value: '45' } })
+  expect(localStorage.getItem('word-castle:volume:v1')).toBe('45')
+  expect(effectVolume).toHaveBeenCalledWith(45)
+  expect(speechVolume).toHaveBeenCalledWith(45)
   fireEvent.click(screen.getByRole('button', { name: 'Phóng to màn hình gameplay' }))
   expect(requestFullscreen).toHaveBeenCalledTimes(1)
   fireEvent.click(screen.getByRole('button', { name: 'Bật âm thanh & bắt đầu' }))

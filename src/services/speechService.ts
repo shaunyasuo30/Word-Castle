@@ -1,4 +1,5 @@
 import { dictionaryAudio, type Recording } from './dictionaryAudio'
+import { getAudioVolume } from './audioVolume'
 
 const VOICE_KEY = 'word-castle:voice:v1'
 const ACCENT_KEY = 'word-castle:accent:v1'
@@ -73,6 +74,11 @@ function recordingBeforeDeadline(word: string, accent: Accent): Promise<Recordin
 export const speechService = {
   supported(): boolean { return browserVoiceAvailable() || recordingAvailable() },
 
+  applyVolume(percent: number): void {
+    if (activeAudio) activeAudio.volume = percent / 100
+    if (activeUtterance) activeUtterance.volume = percent / 100
+  },
+
   getEnglishVoices(): SpeechSynthesisVoice[] {
     if (!browserVoiceAvailable()) return []
     const accent = this.getAccent()
@@ -140,7 +146,7 @@ export const speechService = {
         utterance.lang = utterance.voice?.lang ?? this.getAccent()
         utterance.rate = slow ? 0.72 : 0.88
         utterance.pitch = 1
-        utterance.volume = 1
+        utterance.volume = getAudioVolume() / 100
         utterance.onend = () => { if (activeUtterance === utterance) activeUtterance = null }
         utterance.onerror = () => { if (activeUtterance === utterance) activeUtterance = null }
         activeUtterance = utterance
@@ -166,7 +172,7 @@ export const speechService = {
       audio.preload = 'auto'
       audio.playbackRate = slow ? 0.78 : 1
       audio.preservesPitch = true
-      audio.volume = 1
+      audio.volume = getAudioVolume() / 100
       let failed = false
       const playbackTimeout = setTimeout(() => fallback(), RECORDING_WAIT_MS)
       const fallback = () => {

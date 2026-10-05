@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { dictionaryAudio } from './dictionaryAudio'
 import { speechService } from './speechService'
+import { setAudioVolume } from './audioVolume'
 
 class FakeUtterance {
   lang = ''
@@ -49,6 +50,19 @@ beforeEach(() => {
 afterEach(() => { speechService.stop(); vi.restoreAllMocks(); vi.useRealTimers(); vi.unstubAllGlobals() })
 
 describe('speechService', () => {
+  it('applies volume to recorded audio and browser speech', async () => {
+    vi.spyOn(dictionaryAudio, 'get').mockResolvedValueOnce(ukRecording).mockResolvedValueOnce(null)
+    speechService.speak('apple')
+    await vi.advanceTimersByTimeAsync(0)
+    setAudioVolume(35)
+    speechService.applyVolume(35)
+    expect(FakeAudio.instances[0].volume).toBe(0.35)
+    speechService.speak('castle')
+    await vi.advanceTimersByTimeAsync(0)
+    const utterance = synth.speak.mock.calls[0][0] as FakeUtterance
+    expect(utterance.volume).toBe(0.35)
+  })
+
   it('plays a recorded UK pronunciation before browser speech', async () => {
     vi.spyOn(dictionaryAudio, 'get').mockResolvedValue(ukRecording)
     expect(speechService.speak('apple')).toBe(true)

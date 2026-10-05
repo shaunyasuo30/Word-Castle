@@ -3,6 +3,7 @@ import { beforeEach, afterEach, expect, it, vi } from 'vitest'
 import { SoundEffects } from './soundEffects'
 import { GameEngine } from '../game/GameEngine'
 import type { GameConfig } from '../game/types'
+import { setAudioVolume } from './audioVolume'
 
 class AudioParamMock {
   value = 0
@@ -84,6 +85,20 @@ it('fades and stops an ending cue when effects are muted', () => {
   expect(sound.isMuted()).toBe(true)
   expect(context.gains[0].gain.value).toBe(0)
   expect(context.stopTimes).toContain(0.15)
+})
+
+it('uses the saved volume and preserves it when effects are muted and unmuted', () => {
+  setAudioVolume(40)
+  const sound = new SoundEffects()
+  sound.unlock()
+  const master = AudioContextMock.latest.gains[0].gain
+  expect(master.value).toBe(0.4)
+  sound.setMuted(true)
+  sound.applyVolume(60)
+  expect(master.value).toBe(0)
+  setAudioVolume(60)
+  sound.setMuted(false)
+  expect(master.value).toBe(0.6)
 })
 
 it('plays local recordings for shots and explosions without synthetic oscillators', async () => {

@@ -1,4 +1,5 @@
 import type { GameSoundEvent } from '../game/types'
+import { getAudioVolume } from './audioVolume'
 
 type AudioContextWithWebkit = Window & { webkitAudioContext?: typeof AudioContext }
 type SoundCue = GameSoundEvent | 'start'
@@ -23,10 +24,16 @@ export class SoundEffects {
 
   isMuted(): boolean { return this.muted }
 
+  applyVolume(percent: number): void {
+    if (this.master && this.context) {
+      this.master.gain.setTargetAtTime(this.muted ? 0 : percent / 100, this.context.currentTime, 0.015)
+    }
+  }
+
   setMuted(value: boolean): void {
     this.muted = value
     if (this.master && this.context) {
-      this.master.gain.setTargetAtTime(value ? 0 : 1, this.context.currentTime, 0.015)
+      this.master.gain.setTargetAtTime(value ? 0 : getAudioVolume() / 100, this.context.currentTime, 0.015)
     }
     if (value) this.stopMusic()
     try { localStorage.setItem('word-castle:sfx-muted', String(value)) } catch { /* keep session choice */ }
@@ -40,7 +47,7 @@ export class SoundEffects {
       if (!this.context) {
         this.context = new Context()
         this.master = this.context.createGain()
-        this.master.gain.value = this.muted ? 0 : 1
+        this.master.gain.value = this.muted ? 0 : getAudioVolume() / 100
         this.master.connect(this.context.destination)
       }
       if (this.context.state === 'suspended') void this.context.resume()

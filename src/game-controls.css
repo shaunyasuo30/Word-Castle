@@ -19,6 +19,8 @@
 .hud-speed label { color: #afbce4; font-size: 10px; font-weight: 900; letter-spacing: .06em; white-space: nowrap; }
 .hud-speed b { color: #ffe3a8; letter-spacing: 0; }
 .hud-speed input { width: 100%; height: 20px; accent-color: #84eacb; cursor: pointer; }
+.hud-speed .volume-label { margin-top: 3px; }
+.hud-speed #game-volume { accent-color: #ffd185; }
 .hud-actions { flex-direction: row !important; gap: 7px; }
 .hud-icon-button { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid #ffffff50; border-radius: 10px; background: #ffffff20; color: #fff8e8; cursor: pointer; }
 .hud-icon-button:hover { background: #ffffff38; }

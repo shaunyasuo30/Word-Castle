@@ -1,3 +1,4 @@
+import BrandMark from './BrandMark'
 import { useState } from 'react'
 import { ArrowLeft, BookOpen, Check, Edit3, Play, Plus, Save, Trash2, X } from 'lucide-react'
 import type { VocabularyItem, VocabularySet } from '../types/vocabulary'
@@ -82,7 +83,7 @@ export default function VocabularyPage({ sets, onChange, onBack, onPlay }: Props
   return <div className="page-shell library-page">
     <header className="topbar">
       <button className="back-button" onClick={onBack}><ArrowLeft size={19} /> Trang chủ</button>
-      <span className="brand-mini"><span className="brand-mark">W</span> WORD CASTLE</span>
+      <span className="brand-mini"><BrandMark /> WORD CASTLE</span>
       <span className="topbar-tag">KHO TỪ VỰNG</span>
     </header>
     <div className="page-heading">

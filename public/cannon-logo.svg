@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title">
+  <title id="title">Word Castle cannon</title>
+  <defs>
+    <linearGradient id="badge" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#28466b"/>
+      <stop offset="1" stop-color="#111d38"/>
+    </linearGradient>
+    <linearGradient id="barrel" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#ffe0a2"/>
+      <stop offset=".5" stop-color="#f8a15f"/>
+      <stop offset="1" stop-color="#ca5261"/>
+    </linearGradient>
+    <linearGradient id="flash" x1="0" y1="1" x2="1" y2="0">
+      <stop stop-color="#ff785b"/>
+      <stop offset="1" stop-color="#fff3a6"/>
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="90" height="90" rx="23" fill="url(#badge)" stroke="#76e0c8" stroke-width="4"/>
+  <path d="M15 75h66" fill="none" stroke="#55728c" stroke-width="3" stroke-linecap="round"/>
+  <path d="m74 18 4-11 3 12 9-2-7 8 8 7-12-2-3 9-3-11-8-1 8-6-4-8z" fill="url(#flash)"/>
+  <path d="m68 17 3-4m17 24 3 2" fill="none" stroke="#ffe5a0" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="m27 63 10-9 28 7 13 15H30z" fill="#456783" stroke="#15283d" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M27 54 59 23q3-3 6 0l12 12q3 3 0 6L45 69z" fill="url(#barrel)" stroke="#192b43" stroke-width="4" stroke-linejoin="round"/>
+  <path d="m31 54 31-29" fill="none" stroke="#fff0bb" stroke-width="3" stroke-linecap="round" opacity=".85"/>
+  <path d="m61 21 18 18-7 7-18-18z" fill="#f8c677" stroke="#1b2e45" stroke-width="3" stroke-linejoin="round"/>
+  <path d="m62 25 12 12" fill="none" stroke="#fff4c8" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="31" cy="70" r="15" fill="#f8ba75" stroke="#172b42" stroke-width="4"/>
+  <circle cx="31" cy="70" r="8" fill="#385574" stroke="#ffe3a3" stroke-width="2"/>
+  <circle cx="31" cy="70" r="3" fill="#fff1c0"/>
+</svg>

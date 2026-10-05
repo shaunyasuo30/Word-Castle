@@ -7,6 +7,7 @@ import './visual-refresh.css'
 import './theme.css'
 import './game-controls.css'
 import './atmosphere.css'
+import './brand.css'
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

@@ -10,7 +10,7 @@ Dự án được xây bằng **React, TypeScript, Vite và Canvas**. Kho từ c
 - Ưu tiên bản ghi phát âm từ Wiktionary/Wikimedia Commons; hỗ trợ chọn giọng **UK/US** và giọng Web Speech dự phòng.
 - Gõ nhanh nhiều chữ để xếp hàng bắn. Nòng pháo xoay về ô chữ cần điền; có nút **Nghe lại** và **Nghe chậm**.
 - Hiển thị từ hoàn chỉnh và nghĩa tiếng Việt khi bắn đúng hoặc khi ô từ chạm tường. Ván chơi có điểm, mạng và màn kết quả **VICTORY/DEFEAT**.
-- Có chế độ ngày/đêm, tuyết nền, hiệu ứng chiến trường, tiếng pháo và tiếng nổ; có thể chỉnh tốc độ rơi, bật/tắt hiệu ứng âm thanh và phóng to màn chơi.
+- Có chế độ ngày/đêm, tuyết nền, hiệu ứng chiến trường, tiếng pháo và tiếng nổ; có thể chỉnh tốc độ rơi và âm lượng, bật/tắt riêng hiệu ứng âm thanh và phóng to màn chơi.
 
 ## Cài đặt và chạy
 
