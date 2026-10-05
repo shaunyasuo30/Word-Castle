@@ -1,0 +1,186 @@
+/* Be Vietnam Pro supplies Vietnamese diacritics throughout the HTML interface.
+   Canvas labels keep their existing Baloo 2 / Nunito rendering. */
+#root, #root *:not(canvas):not(svg):not(path) {
+  font-family: 'Be Vietnam Pro', 'Nunito', sans-serif;
+}
+
+.theme-toggle {
+  position: fixed;
+  z-index: 50;
+  right: 20px;
+  bottom: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 15px;
+  border: 1px solid #f7e0aa;
+  border-radius: 999px;
+  background: linear-gradient(135deg,#fff6d8,#ffca83);
+  box-shadow: 0 7px 0 #bc6d5b, 0 15px 32px #11152d55;
+  color: #46344e;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.theme-toggle:hover { transform: translateY(-3px); box-shadow: 0 10px 0 #bc6d5b, 0 20px 36px #11152d55; }
+.theme-toggle:active { transform: translateY(4px); box-shadow: 0 2px 0 #bc6d5b, 0 7px 16px #11152d55; }
+
+/* Day: warm sunlight and blue skies across the landing page and game. */
+html[data-theme='day'] body,
+html[data-theme='day'] body:has(.game-page) {
+  background: radial-gradient(circle at 80% 0%, #fff4d3, transparent 34%), #e9f6ff;
+}
+html[data-theme='day'] .home-page {
+  background: radial-gradient(circle at 80% 25%, #fff0c7, transparent 32%),
+              radial-gradient(circle at 4% 70%, #c8f0e9, transparent 32%),
+              linear-gradient(145deg,#e9f7ff,#f8f4f0 70%,#f3e4f2);
+}
+html[data-theme='day'] .home-nav { border-color:#bcd9e6; }
+html[data-theme='day'] .home-nav .brand,
+html[data-theme='day'] .home-nav nav button,
+html[data-theme='day'] .hero-copy h1 { color:#263955; text-shadow:none; }
+html[data-theme='day'] .home-nav .brand>span:last-child>span,
+html[data-theme='day'] .hero-copy h1 span { color:#dc6c5d; text-shadow:none; }
+html[data-theme='day'] .home-nav nav .nav-play { background:#fffaf5; border-color:#ead8bd; box-shadow:0 5px 13px #46658621; }
+html[data-theme='day'] .home-nav nav .nav-play:hover { background:#fff1df; }
+html[data-theme='day'] .hero-badge { background:#fff7df; border-color:#f6d49f; color:#9a594a; }
+html[data-theme='day'] .hero-copy>p,
+html[data-theme='day'] .hero-note { color:#526981; }
+html[data-theme='day'] .hero-actions .button-outline { background:#ffffffbd; color:#30445f; border-color:#bdd3dd; box-shadow:0 5px 0 #afc8d0; }
+html[data-theme='day'] .hero-actions .button-outline:hover { background:#fff; }
+html[data-theme='day'] .hero-art {
+  border-color:#fff;
+  background:radial-gradient(circle at 66% 20%,#ffdf9b,transparent 28%),linear-gradient(170deg,#74bce7,#b4dcf0 62%,#ffddae);
+  box-shadow:0 0 0 5px #8ec8df9c,0 25px 54px #4c779456,inset 0 0 48px #fff8d977;
+}
+html[data-theme='day'] .hero-art:before { background:#78a9bb; }
+html[data-theme='day'] .hero-art:after { background:#5d91a8; }
+html[data-theme='day'] .art-moon { background:#fff0a6; box-shadow:0 0 0 14px #fff2b451,0 0 60px #fff3b3; }
+html[data-theme='day'] .art-cloud { background:#ffffff9c; }
+html[data-theme='day'] .art-stars { opacity:.18; }
+html[data-theme='day'] .art-level-tag { background:#fdf9e6e8; color:#40516a; border-color:#fff; }
+html[data-theme='day'] .feature-card { background:#ffffffc9; border-color:#c9e0e5; box-shadow:0 13px 32px #4f809828; }
+html[data-theme='day'] .feature-card h3 { color:#273c58; }
+html[data-theme='day'] .feature-card p { color:#60748c; }
+html[data-theme='day'] .feature-icon.purple { background:#eee4ff; color:#7456ae; }
+html[data-theme='day'] .feature-icon.peach { background:#ffead5; color:#b96b47; }
+html[data-theme='day'] .feature-icon.mint { background:#d9f5e9; color:#368d79; }
+html[data-theme='day'] .home-footer { color:#71859b; border-color:#b8d1dd; }
+
+html[data-theme='day'] .game-page .topbar { border-color:#b7d1dc; }
+html[data-theme='day'] .game-page .back-button,
+html[data-theme='day'] .game-page .brand-mini,
+html[data-theme='day'] .game-heading h1 { color:#263b57; text-shadow:none; }
+html[data-theme='day'] .game-page .topbar-tag,
+html[data-theme='day'] .game-heading p,
+html[data-theme='day'] .game-footer { color:#617995; }
+html[data-theme='day'] .game-heading .eyebrow { color:#bd615a; }
+html[data-theme='day'] .game-level-chip { background:#fff8e8; border-color:#f2d39d; color:#8a5a56; }
+html[data-theme='day'] .game-frame { border-color:#fff; box-shadow:0 0 0 5px #9fcfe29c,0 22px 52px #557e9d55; }
+html[data-theme='day'] .game-hud { background:linear-gradient(105deg,#426a9a,#397da0 55%,#456b9a); }
+html[data-theme='day'] .mission-track { background:#b9dce4; }
+html[data-theme='day'] .game-controls { background:linear-gradient(90deg,#fffdf8,#f0fbff); }
+.game-footer { flex-wrap:wrap; gap:8px 18px; }
+.game-footer a { color:#a9edd8; text-decoration:underline; text-underline-offset:3px; }
+html[data-theme='day'] .game-footer a { color:#267d79; }
+
+/* Night: the vocabulary and selection screens follow the arcade palette. */
+html[data-theme='night'] .library-page:before,
+html[data-theme='night'] .selection-page:before {
+  background:radial-gradient(circle at 86% 12%,#363f80,transparent 32%),
+             radial-gradient(circle at 6% 74%,#24506a,transparent 31%),#141f40;
+}
+html[data-theme='night'] body:has(.library-page),
+html[data-theme='night'] body:has(.selection-page) { background:#141f40; }
+html[data-theme='night'] .library-page .topbar,
+html[data-theme='night'] .selection-page .topbar { border-color:#ffffff2b; }
+html[data-theme='night'] .library-page .back-button,
+html[data-theme='night'] .selection-page .back-button,
+html[data-theme='night'] .library-page .brand-mini,
+html[data-theme='night'] .selection-page .brand-mini,
+html[data-theme='night'] .page-heading h1,
+html[data-theme='night'] .selection-heading h1 { color:#f9f4ff; }
+html[data-theme='night'] .page-heading p,
+html[data-theme='night'] .selection-heading p { color:#bfcae2; }
+html[data-theme='night'] .topbar-tag { color:#b9c6df; }
+html[data-theme='night'] .panel,
+html[data-theme='night'] .choice-card { background:linear-gradient(145deg,#26365d,#202e51); border-color:#7080aa70; box-shadow:0 18px 38px #080f2b66; color:#f8f4ff; }
+html[data-theme='night'] .sets-panel { background:linear-gradient(145deg,#26365d,#202e51); }
+html[data-theme='night'] .panel-title h2,
+html[data-theme='night'] .words-header h2,
+html[data-theme='night'] .choice-card h2,
+html[data-theme='night'] .no-selection h2 { color:#fff7ec; }
+html[data-theme='night'] .panel-title span,
+html[data-theme='night'] .words-header p,
+html[data-theme='night'] .choice-card p,
+html[data-theme='night'] .choice-add small,
+html[data-theme='night'] .empty-copy,
+html[data-theme='night'] .empty-words,
+html[data-theme='night'] .library-tip,
+html[data-theme='night'] .no-selection p { color:#c0cbe2; }
+html[data-theme='night'] .set-card { background:#ffffff10; color:#ecf1ff; border-color:#ffffff15; }
+html[data-theme='night'] .set-card:hover { background:#ffffff20; }
+html[data-theme='night'] .set-card.selected { background:linear-gradient(135deg,#514b89,#555575); border-color:#b6a5f1; }
+html[data-theme='night'] .set-meta small,
+html[data-theme='night'] .word-name i { color:#bac4d9; }
+html[data-theme='night'] .new-set-form,
+html[data-theme='night'] .words-header,
+html[data-theme='night'] .add-word-form { border-color:#ffffff24; }
+html[data-theme='night'] .words-header,
+html[data-theme='night'] .add-word-form { background:#26365d; }
+html[data-theme='night'] .table-heading { background:#1c294b; color:#bfcae5; }
+html[data-theme='night'] .word-row { border-color:#ffffff1c; }
+html[data-theme='night'] .word-row:hover { background:#ffffff12; }
+html[data-theme='night'] .word-name { color:#fff7ee; }
+html[data-theme='night'] .word-meaning { color:#d2dfed; }
+html[data-theme='night'] .input-action input,
+html[data-theme='night'] .word-inputs input { background:#1c2949; border-color:#7687aa; color:#fff; }
+html[data-theme='night'] .input-action input::placeholder,
+html[data-theme='night'] .word-inputs input::placeholder { color:#a9b9cf; }
+html[data-theme='night'] .new-set-form label { color:#c7d1e8; }
+html[data-theme='night'] .choice-add { background:#ffffff14; border-color:#9dadd0; color:#f4edff; }
+html[data-theme='night'] .choice-add:hover { background:#ffffff23; }
+html[data-theme='night'] .choice-add>span { background:#ffffff22; color:#e5d5ff; }
+html[data-theme='night'] .choice-label { color:#d4bcff; }
+
+.word-search {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 28px;
+  background:#f8f5fd;
+  border-bottom:1px solid #e9e0f4;
+}
+.word-search input {
+  flex:1;
+  min-width:0;
+  border:1px solid #d7cfec;
+  border-radius:10px;
+  background:#fff;
+  color:#283955;
+  padding:10px 13px;
+  font-size:13px;
+  font-weight:600;
+}
+.word-search span { color:#738099; font-size:11px; font-weight:800; white-space:nowrap; }
+html[data-theme='night'] .word-search { background:#202e51; border-color:#ffffff24; }
+html[data-theme='night'] .word-search input { background:#1c2949; border-color:#7687aa; color:#fff; }
+html[data-theme='night'] .word-search input::placeholder { color:#a9b9cf; }
+html[data-theme='night'] .word-search span { color:#c0cbe2; }
+.word-pagination { display:flex; align-items:center; justify-content:center; gap:14px; padding:12px; background:#f8f5fd; border-top:1px solid #e9e0f4; color:#52627c; font-size:12px; font-weight:800; }
+.word-pagination button { border:1px solid #d7cfec; border-radius:8px; background:#fff; color:#564696; padding:7px 11px; font-weight:800; }
+html[data-theme='night'] .word-pagination { background:#202e51; border-color:#ffffff24; color:#cbd7ec; }
+html[data-theme='night'] .word-pagination button { background:#35456c; border-color:#7687aa; color:#f7f2ff; }
+.sample-badge { display:inline-block; margin-left:7px; padding:2px 5px; border-radius:5px; background:#eadfff; color:#6c4bae; font-size:9px; font-style:normal; font-weight:800; vertical-align:middle; }
+html[data-theme='night'] .sample-badge { background:#674f9f; color:#fff2ce; }
+
+@media (max-width:680px) {
+  .theme-toggle { right:12px; bottom:12px; min-width:44px; padding:10px; justify-content:center; }
+  .theme-toggle span { display:none; }
+  .game-footer { display:flex; justify-content:center; padding-bottom:25px; text-align:center; font-size:10px; }
+  .word-search { padding:10px 16px; }
+  .word-search span { display:none; }
+}
+@media (prefers-reduced-motion:reduce) { .theme-toggle { transition:none; } }

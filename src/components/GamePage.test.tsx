@@ -1,0 +1,99 @@
+// @vitest-environment jsdom
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import GamePage from './GamePage'
+import { speechService } from '../services/speechService'
+
+let nextFrame: FrameRequestCallback | undefined
+let clock = 0
+
+function frames(count: number): void {
+  act(() => {
+    for (let i = 0; i < count; i++) {
+      const frame = nextFrame
+      nextFrame = undefined
+      clock += 50
+      frame?.(clock)
+    }
+  })
+}
+
+beforeEach(() => {
+  localStorage.clear()
+  clock = 0
+  nextFrame = undefined
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { nextFrame = callback; return 1 })
+  vi.stubGlobal('cancelAnimationFrame', () => { nextFrame = undefined })
+  Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: {
+    getVoices: () => [], addEventListener: () => {}, removeEventListener: () => {}, cancel: () => {},
+  } })
+  vi.stubGlobal('SpeechSynthesisUtterance', class {})
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(() => null)
+})
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
+
+it('keeps the complete English word and Vietnamese meaning visible through the explosion', () => {
+  const prime = vi.spyOn(speechService, 'prime').mockReturnValue(true)
+  const preview = vi.spyOn(speechService, 'preview').mockReturnValue(true)
+  const speak = vi.spyOn(speechService, 'speak').mockReturnValue(true)
+  render(<GamePage set={{ id: 'one', name: 'One', words: [{ id: 'a', word: 'a', meaning: 'một' }] }} onHome={() => {}} />)
+  expect(screen.queryByRole('group', { name: 'Chọn phong cách giọng đọc' })).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Nghe thử từ “hello”' }))
+  expect(preview).toHaveBeenCalledTimes(1)
+  const prefetch = vi.spyOn(speechService, 'prefetch').mockImplementation(() => {})
+  fireEvent.click(screen.getByRole('button', { name: 'Bật âm thanh & bắt đầu' }))
+  expect(prime).toHaveBeenCalledTimes(1)
+  expect(prefetch).toHaveBeenCalledWith(['a'])
+  frames(56)
+  expect(screen.getByText('GO!')).toBeTruthy()
+  frames(20)
+  expect(speak).toHaveBeenCalledWith('a')
+  fireEvent.click(screen.getByRole('button', { name: /US/ }))
+  expect(speechService.getAccent()).toBe('en-US')
+  fireEvent.click(screen.getByRole('button', { name: 'Nghe chậm' }))
+  expect(speak).toHaveBeenCalledWith('a', true)
+  fireEvent.keyDown(window, { key: 'a' })
+  frames(8)
+  expect(screen.getByText('một')).toBeTruthy()
+  expect(screen.getByText('CHÍNH XÁC! TỪ VỪA NGHE LÀ')).toBeTruthy()
+  frames(24)
+  expect(screen.getByText('một')).toBeTruthy()
+  expect(screen.getByText('PHÁ HỦY THÀNH CÔNG')).toBeTruthy()
+  frames(31)
+  expect(screen.getByText('VICTORY')).toBeTruthy()
+})
+
+it('prefetches only the next few pronunciations for a 500-word set', () => {
+  vi.spyOn(speechService, 'prime').mockReturnValue(true)
+  const prefetch = vi.spyOn(speechService, 'prefetch').mockImplementation(() => {})
+  const words = Array.from({ length: 500 }, (_, index) => ({ id: String(index), word: 'apple', meaning: 'quả táo' }))
+  render(<GamePage set={{ id: 'large', name: 'Large', words }} onHome={() => {}} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Bật âm thanh & bắt đầu' }))
+  expect(prefetch).toHaveBeenCalledTimes(1)
+  expect(prefetch.mock.calls[0][0]).toHaveLength(6)
+})
+
+it('shows the missed answer and offers speed, voice, fullscreen and cannon listening controls', () => {
+  vi.spyOn(speechService, 'prime').mockReturnValue(true)
+  vi.spyOn(speechService, 'speak').mockReturnValue(true)
+  vi.spyOn(speechService, 'prefetch').mockImplementation(() => {})
+  const requestFullscreen = vi.fn().mockResolvedValue(undefined)
+  Object.defineProperty(HTMLElement.prototype, 'requestFullscreen', { configurable: true, value: requestFullscreen })
+  const { container } = render(<GamePage set={{ id: 'wall', name: 'Wall', words: [{ id: 'apple', word: 'apple', meaning: 'quả táo' }] }} onHome={() => {}} />)
+  expect(screen.getByRole('group', { name: 'Chọn giọng Anh Anh hoặc Anh Mỹ' })).toBeTruthy()
+  expect(screen.getByLabelText('Chọn giọng dự phòng')).toBeTruthy()
+  fireEvent.change(screen.getByRole('slider', { name: 'Tốc độ rơi' }), { target: { value: '48' } })
+  expect(localStorage.getItem('word-castle:fall-speed')).toBe('48')
+  fireEvent.click(screen.getByRole('button', { name: 'Phóng to màn hình gameplay' }))
+  expect(requestFullscreen).toHaveBeenCalledTimes(1)
+  fireEvent.click(screen.getByRole('button', { name: 'Bật âm thanh & bắt đầu' }))
+  frames(76)
+  expect(container.querySelector('.cannon-audio-controls')).toBeTruthy()
+  frames(160)
+  expect(screen.getByText('BỎ LỠ · TỪ CẦN ĐIỀN')).toBeTruthy()
+  expect(screen.getByText('APPLE')).toBeTruthy()
+  expect(screen.getByText('quả táo')).toBeTruthy()
+  frames(30)
+  expect(screen.getByText('Từ vừa bỏ lỡ:')).toBeTruthy()
+  expect(screen.getByText('DEFEAT')).toBeTruthy()
+})

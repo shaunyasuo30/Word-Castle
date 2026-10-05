@@ -1,0 +1,19 @@
+.start-overlay{background:#142340c9;gap:10px;padding:24px}
+.start-overlay h2{font:800 clamp(26px,4vw,45px)/1.1 'Baloo 2',sans-serif;margin:0;color:#fff5df}
+.start-overlay p{max-width:370px;margin:0 0 12px;color:#e0e5ed;font-size:15px;font-weight:800;line-height:1.45}
+.start-overlay .eyebrow{color:#ffc89c}
+.translation-toast{position:absolute;z-index:2;top:18px;left:18px;display:flex;flex-direction:column;min-width:235px;max-width:min(45%,360px);padding:12px 18px;border:2px solid #b8f0d8;border-radius:15px;background:#f5fff4ed;box-shadow:0 9px 26px #10244165;animation:word-appear .22s ease-out;pointer-events:none}
+.translation-toast small{color:#4fa88b;font-size:10px;font-weight:900;letter-spacing:.1em}
+.translation-toast strong{font:800 27px/1.1 'Baloo 2',sans-serif;color:#304c5c;overflow-wrap:anywhere}
+.translation-toast span{color:#65778b;font-size:15px;font-weight:900;overflow-wrap:anywhere}
+.translation-toast.bursting{border-color:#ffe4ac;background:#fffaf0f2;animation:burst-toast .6s ease-out both;box-shadow:0 0 0 5px #fff0bd77,0 12px 38px #ffb36d88}
+.translation-toast.bursting small{color:#e69262}
+@keyframes word-appear{from{opacity:0;transform:translateY(-9px) scale(.95)}to{opacity:1;transform:none}}
+@keyframes burst-toast{0%{transform:scale(.92);filter:brightness(1.4)}35%{transform:scale(1.06);filter:brightness(1.08)}100%{transform:scale(1);filter:brightness(1)}}
+@media(prefers-reduced-motion:reduce){.translation-toast.bursting{animation:none}}
+.audio-controls{display:flex;align-items:center;gap:10px;min-width:0}
+.voice-picker{display:flex;align-items:center;gap:7px;color:#8693a8;font-size:12px;font-weight:900;white-space:nowrap}
+.voice-picker select{max-width:195px;min-width:125px;padding:9px 26px 9px 10px;border:1px solid #dfe8e6;border-radius:10px;background:#f7fbfa;color:#4d6472;font-size:12px;font-weight:800;outline:0;text-overflow:ellipsis}
+.voice-picker select:focus{border-color:#65baa7;box-shadow:0 0 0 3px #d9eee8}
+@media(max-width:760px){.game-controls{height:auto;min-height:66px;flex-wrap:wrap;padding-block:10px}.audio-controls{flex:1;justify-content:flex-end}.voice-picker select{max-width:145px}.translation-toast{min-width:0;max-width:55%;padding:7px 10px;top:8px;left:8px}.translation-toast small{font-size:7px}.translation-toast strong{font-size:18px}.translation-toast span{font-size:11px}}
+@media(max-width:480px){.audio-controls{width:100%;justify-content:space-between;gap:5px}.voice-picker{font-size:10px}.voice-picker select{max-width:130px;min-width:100px;font-size:10px}.listen-button{padding:8px;font-size:10px}.start-overlay p{font-size:11px}.start-overlay .button{font-size:11px;padding:10px}.translation-toast{max-width:62%}}
