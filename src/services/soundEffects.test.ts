@@ -9,7 +9,7 @@ class AudioParamMock {
   value = 0
   peak = 0
   setValueAtTime(value: number): void { this.value = value }
-  exponentialRampToValueAtTime(value: number): void { this.value = value }
+  exponentialRampToValueAtTime(value: number): void { this.value = value; this.peak = Math.max(this.peak, value) }
   linearRampToValueAtTime(value: number): void { this.value = value; this.peak = Math.max(this.peak, value) }
   setTargetAtTime(value: number): void { this.value = value }
   cancelScheduledValues(): void {}
@@ -112,23 +112,27 @@ it('plays a short button cue and respects the effects mute setting', () => {
   expect(context.oscillatorCount).toBe(2)
 })
 
-it('plays local recordings for shots and explosions without synthetic oscillators', async () => {
+it('plays a clear, short shot at moderate volume and keeps recorded explosions', async () => {
   const fetchRecording = vi.fn().mockResolvedValue({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) })
   vi.stubGlobal('fetch', fetchRecording)
   const sound = new SoundEffects()
   await sound.preload()
   const context = AudioContextMock.latest
-  expect(fetchRecording).toHaveBeenCalledTimes(7)
-  expect(fetchRecording.mock.calls[0][0]).toMatch(/\/sfx\/cannon_fire_1\.mp3$/)
+  expect(fetchRecording).toHaveBeenCalledTimes(5)
+  expect(fetchRecording.mock.calls[0][0]).toMatch(/\/sfx\/bomb_blast\.mp3$/)
   sound.play('shoot')
+  expect(context.recordingDurations).toHaveLength(0)
+  expect(context.oscillatorCount).toBe(2)
+  expect(Math.max(...context.stopTimes)).toBeLessThan(0.2)
+  expect(Math.max(...context.gains.map(node => node.gain.peak))).toBeGreaterThanOrEqual(0.09)
+  expect(Math.max(...context.gains.map(node => node.gain.peak))).toBeLessThan(0.12)
   sound.play('explode')
   sound.play('wall')
-  expect(context.recordingDurations).toEqual([1.35, 1.4, 1.3, 1.1])
-  expect(context.oscillatorCount).toBe(0)
-  expect(context.gains[2].gain.peak).toBeGreaterThan(context.gains[1].gain.peak)
+  expect(context.recordingDurations).toEqual([1.4, 1.3, 1.1])
+  expect(context.oscillatorCount).toBe(2)
   sound.setMuted(true)
   sound.play('shoot')
-  expect(context.recordingDurations).toHaveLength(4)
+  expect(context.oscillatorCount).toBe(2)
 })
 
 it('plays spoken announcements over the opening and ending music', async () => {
@@ -143,7 +147,7 @@ it('plays spoken announcements over the opening and ending music', async () => {
   expect(context.recordingDurations).toEqual([0.86, 1.75, 2.05])
 })
 
-it('plays a louder recorded shot without the old chime when the bullet hits', async () => {
+it('plays the shot when a bullet launches without a second cue on hit', async () => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) }))
   const sound = new SoundEffects()
   await sound.preload()
@@ -157,7 +161,7 @@ it('plays a louder recorded shot without the old chime when the bullet hits', as
   engine.shoot('a')
   for (let i = 0; i < 9; i++) engine.update(0.05)
 
-  expect(context.recordingDurations).toHaveLength(1)
-  expect(context.oscillatorCount).toBe(0)
-  expect(context.gains.at(-1)?.gain.peak).toBeGreaterThanOrEqual(0.75)
+  expect(context.recordingDurations).toHaveLength(0)
+  expect(context.oscillatorCount).toBe(2)
+  expect(context.gains.at(-1)?.gain.peak).toBeLessThan(0.1)
 })

@@ -3,9 +3,8 @@ import { getAudioVolume } from './audioVolume'
 
 type AudioContextWithWebkit = Window & { webkitAudioContext?: typeof AudioContext }
 type SoundCue = GameSoundEvent | 'start' | 'button'
-type RecordingName = 'cannon_fire_1' | 'cannon_fire_2' | 'bomb_blast' | 'firework_burst' | 'go' | 'victory' | 'defeat'
-const RECORDINGS: RecordingName[] = ['cannon_fire_1', 'cannon_fire_2', 'bomb_blast', 'firework_burst', 'go', 'victory', 'defeat']
-const SHOTS: RecordingName[] = ['cannon_fire_1', 'cannon_fire_2']
+type RecordingName = 'bomb_blast' | 'firework_burst' | 'go' | 'victory' | 'defeat'
+const RECORDINGS: RecordingName[] = ['bomb_blast', 'firework_burst', 'go', 'victory', 'defeat']
 
 export class SoundEffects {
   private context: AudioContext | null = null
@@ -15,7 +14,6 @@ export class SoundEffects {
   private noiseBuffer: AudioBuffer | null = null
   private recordings = new Map<RecordingName, AudioBuffer>()
   private recordingLoads = new Map<RecordingName, Promise<AudioBuffer | null>>()
-  private shotIndex = 0
   private muted = false
 
   constructor() {
@@ -255,7 +253,9 @@ export class SoundEffects {
         this.playRecording('defeat', 1, 2.05)
         break
       case 'shoot':
-        this.playRecording(SHOTS[this.shotIndex++ % SHOTS.length], 0.8, 1.35)
+        this.tone(210, 105, 0.14, 0, 0.09, 'sine')
+        this.tone(520, 280, 0.07, 0, 0.065, 'triangle')
+        this.noise(0.055, 0, 0.02, 1400)
         break
       case 'wrong':
         this.tone(310, 178, 0.19, 0, 0.043, 'triangle')
