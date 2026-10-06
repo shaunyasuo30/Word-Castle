@@ -14,7 +14,7 @@ let activeAudio: HTMLAudioElement | null = null
 let currentRecording: Recording | null = null
 const recordingListeners = new Set<(recording: Recording | null) => void>()
 let generation = 0
-let accentFallback: Accent = 'en-GB'
+let accentFallback: Accent = 'en-US'
 
 function browserVoiceAvailable(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window &&
@@ -27,7 +27,7 @@ function recordingAvailable(): boolean {
 
 function voiceScore(voice: SpeechSynthesisVoice, accent: Accent): number {
   const name = voice.name.toLowerCase()
-  let score = voice.lang.toLowerCase() === accent.toLowerCase() ? 400 : 0
+  let score = voice.lang.toLowerCase() === accent.toLowerCase() ? 1000 : 0
   if (/natural|neural/.test(name)) score += 310
   if (/online/.test(name)) score += 60
   if (/google (uk|us) english/.test(name)) score += 95
@@ -88,7 +88,7 @@ export const speechService = {
   },
 
   getAccent(): Accent {
-    try { return localStorage.getItem(ACCENT_KEY) === 'en-US' ? 'en-US' : 'en-GB' }
+    try { return localStorage.getItem(ACCENT_KEY) === 'en-GB' ? 'en-GB' : 'en-US' }
     catch { return accentFallback }
   },
 

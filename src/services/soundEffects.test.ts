@@ -101,6 +101,17 @@ it('uses the saved volume and preserves it when effects are muted and unmuted', 
   expect(master.value).toBe(0.6)
 })
 
+it('plays a short button cue and respects the effects mute setting', () => {
+  const sound = new SoundEffects()
+  sound.play('button')
+  const context = AudioContextMock.latest
+  expect(context.oscillatorCount).toBe(2)
+  expect(Math.max(...context.stopTimes)).toBeLessThan(0.2)
+  sound.setMuted(true)
+  sound.play('button')
+  expect(context.oscillatorCount).toBe(2)
+})
+
 it('plays local recordings for shots and explosions without synthetic oscillators', async () => {
   const fetchRecording = vi.fn().mockResolvedValue({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) })
   vi.stubGlobal('fetch', fetchRecording)

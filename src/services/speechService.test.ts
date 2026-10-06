@@ -50,6 +50,17 @@ beforeEach(() => {
 afterEach(() => { speechService.stop(); vi.restoreAllMocks(); vi.useRealTimers(); vi.unstubAllGlobals() })
 
 describe('speechService', () => {
+  it('defaults to US pronunciation and keeps a saved UK choice', async () => {
+    expect(speechService.getAccent()).toBe('en-US')
+    const lookup = vi.spyOn(dictionaryAudio, 'get').mockResolvedValue(null)
+    speechService.speak('apple')
+    await vi.advanceTimersByTimeAsync(0)
+    expect(lookup).toHaveBeenCalledWith('apple', 'en-US')
+    expect((synth.speak.mock.calls[0][0] as FakeUtterance).voice?.voiceURI).toBe('aria')
+    speechService.setAccent('en-GB')
+    expect(speechService.getAccent()).toBe('en-GB')
+  })
+
   it('applies volume to recorded audio and browser speech', async () => {
     vi.spyOn(dictionaryAudio, 'get').mockResolvedValueOnce(ukRecording).mockResolvedValueOnce(null)
     speechService.speak('apple')
@@ -65,6 +76,7 @@ describe('speechService', () => {
 
   it('plays a recorded UK pronunciation before browser speech', async () => {
     vi.spyOn(dictionaryAudio, 'get').mockResolvedValue(ukRecording)
+    speechService.setAccent('en-GB')
     expect(speechService.speak('apple')).toBe(true)
     await vi.advanceTimersByTimeAsync(0)
     expect(FakeAudio.instances).toHaveLength(1)
@@ -85,6 +97,7 @@ describe('speechService', () => {
 
   it('uses the selected natural browser voice when a recording is unavailable', async () => {
     vi.spyOn(dictionaryAudio, 'get').mockResolvedValue(null)
+    speechService.setAccent('en-GB')
     speechService.speak('castle')
     await vi.advanceTimersByTimeAsync(0)
     const utterance = synth.speak.mock.calls[0][0] as FakeUtterance

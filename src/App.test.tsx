@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
+import { soundEffects } from './services/soundEffects'
 
 beforeEach(() => {
   localStorage.clear()
@@ -13,6 +14,18 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
 describe('vocabulary flow', () => {
+  it('plays the button cue across pages but not for non-button clicks', async () => {
+    const user = userEvent.setup()
+    const play = vi.spyOn(soundEffects, 'play').mockImplementation(() => {})
+    render(<App />)
+    await user.click(screen.getAllByRole('button', { name: 'Kho từ vựng' })[0])
+    await user.click(screen.getByRole('button', { name: 'Trang chủ' }))
+    await user.click(screen.getByRole('heading', { name: /Nghe từ/ }))
+    expect(play).toHaveBeenCalledTimes(2)
+    expect(play).toHaveBeenNthCalledWith(1, 'button')
+    expect(play).toHaveBeenNthCalledWith(2, 'button')
+  })
+
   it('switches between day and night on every page and remembers the choice', async () => {
     const user = userEvent.setup()
     const view = render(<App />)

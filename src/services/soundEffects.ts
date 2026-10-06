@@ -2,7 +2,7 @@ import type { GameSoundEvent } from '../game/types'
 import { getAudioVolume } from './audioVolume'
 
 type AudioContextWithWebkit = Window & { webkitAudioContext?: typeof AudioContext }
-type SoundCue = GameSoundEvent | 'start'
+type SoundCue = GameSoundEvent | 'start' | 'button'
 type RecordingName = 'cannon_fire_1' | 'cannon_fire_2' | 'bomb_blast' | 'firework_burst' | 'go' | 'victory' | 'defeat'
 const RECORDINGS: RecordingName[] = ['cannon_fire_1', 'cannon_fire_2', 'bomb_blast', 'firework_burst', 'go', 'victory', 'defeat']
 const SHOTS: RecordingName[] = ['cannon_fire_1', 'cannon_fire_2']
@@ -240,6 +240,10 @@ export class SoundEffects {
     this.unlock()
     if (!this.context) return
     switch (event) {
+      case 'button':
+        this.tone(620, 880, 0.085, 0, 0.025, 'sine')
+        this.tone(930, 1060, 0.065, 0.025, 0.012, 'sine')
+        break
       case 'start': this.playStart(); break
       case 'go': this.playRecording('go', 1, 0.86); break
       case 'victory':

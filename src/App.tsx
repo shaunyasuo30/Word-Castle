@@ -8,6 +8,7 @@ import { vocabularyStorage } from './services/vocabularyStorage'
 import type { VocabularySet } from './types/vocabulary'
 import { loadTheme, saveTheme } from './theme'
 import { MAX_WORDS_PER_SET } from './data/sampleSets'
+import { soundEffects } from './services/soundEffects'
 
 type Page = 'home' | 'library' | 'select' | 'game'
 
@@ -19,6 +20,14 @@ export default function App() {
   const [theme, setTheme] = useState(loadTheme)
 
   useEffect(() => saveTheme(theme), [theme])
+  useEffect(() => {
+    const playButtonSound = (event: MouseEvent) => {
+      const button = event.target instanceof Element ? event.target.closest('button') : null
+      if (button && !button.disabled) soundEffects.play('button')
+    }
+    document.addEventListener('click', playButtonSound, true)
+    return () => document.removeEventListener('click', playButtonSound, true)
+  }, [])
 
   function saveSets(next: VocabularySet[]): void {
     setSets(next)
