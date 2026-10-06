@@ -15,6 +15,28 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
 describe('vocabulary flow', () => {
+  it('makes a looked-up word immediately playable in a newly created set', async () => {
+    vi.stubGlobal('fetch', vi.fn((url: string) => Promise.resolve({ ok: true, status: 200, json: async () => url.startsWith('/api/translate')
+      ? [[['xinh đẹp', 'beautiful']], null, 'en']
+      : [{ word: 'beautiful', meanings: [{ partOfSpeech: 'adjective', definitions: [{ definition: 'Pleasing to see.' }] }] }],
+    })))
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getAllByRole('button', { name: 'Kho từ vựng' })[0])
+    await user.type(screen.getByRole('textbox', { name: 'Từ cần tra' }), 'beautiful')
+    await user.click(screen.getByRole('button', { name: 'Tra từ' }))
+    await screen.findByRole('heading', { name: 'beautiful' })
+    await screen.findByText('Pleasing to see.')
+    await user.click(screen.getByRole('button', { name: 'Add to vocabulary' }))
+    await user.click(screen.getByRole('radio', { name: /Create new vocabulary set/ }))
+    await user.type(screen.getByRole('textbox', { name: 'Tên bộ từ mới' }), 'Dictionary Set')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+    await user.click(screen.getByRole('button', { name: /Dictionary Set1\/500 từ/ }))
+    expect(document.querySelector('.word-meaning')?.textContent).toBe('xinh đẹp')
+    await user.click(screen.getByRole('button', { name: /Chơi bộ này/ }))
+    expect(screen.getByRole('button', { name: 'Bật âm thanh & bắt đầu' })).toBeTruthy()
+  })
+
   it('shows saved learning totals on the Statistics page', async () => {
     gameHistoryStorage.add({
       id: 'game-1', playedAt: '2026-10-06T00:00:00.000Z', setId: 'basic-english', setName: 'Basic English',

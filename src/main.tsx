@@ -9,6 +9,7 @@ import './game-controls.css'
 import './atmosphere.css'
 import './brand.css'
 import './feature-expansion.css'
+import './dictionary.css'
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

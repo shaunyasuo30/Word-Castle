@@ -1,66 +1,76 @@
 # Word Castle
 
-**Word Castle** là game luyện nghe và chính tả tiếng Anh trên trình duyệt. Nghe từ được đọc, gõ từng chữ cái để điều khiển pháo bắn hạ ô từ trước khi nó chạm tường.
+Word Castle là game luyện nghe và chính tả tiếng Anh trên trình duyệt. Nghe từ, gõ từng chữ cái để điều khiển pháo bắn vào ô từ trước khi nó chạm tường.
 
-Dự án được xây bằng **React, TypeScript, Vite và Canvas**. Kho từ cá nhân được lưu ngay trong trình duyệt, không cần tài khoản hay máy chủ dữ liệu.
+Dự án dùng React, TypeScript, Vite và Canvas. Bộ từ, lịch sử chơi và cài đặt được lưu trong `localStorage` của trình duyệt; không cần tài khoản hoặc cơ sở dữ liệu.
 
 ## Tính năng
 
-- Sáu bộ từ mẫu: **Basic English, Animals, Vehicles, Colors, Food, Nature**. Có thể tạo bộ riêng và thêm, sửa, xóa, tìm kiếm từ. Mỗi bộ chứa tối đa **500 từ**; các bộ mẫu ban đầu chưa có đủ 500 từ.
-- Ưu tiên bản ghi phát âm từ Wiktionary/Wikimedia Commons; hỗ trợ chọn giọng **UK/US** và giọng Web Speech dự phòng.
-- Gõ nhanh nhiều chữ để xếp hàng bắn. Nòng pháo xoay về ô chữ cần điền; có nút **Nghe lại** và **Nghe chậm**. Trên màn hình nhỏ hoặc thiết bị cảm ứng có bàn phím chữ ảo.
-- Hiển thị từ hoàn chỉnh và nghĩa tiếng Việt khi bắn đúng hoặc khi ô từ chạm tường. Ván chơi có điểm, mạng và màn kết quả **VICTORY/DEFEAT**.
-- Có **Pause/Resume**, combo chữ đúng liên tiếp, điểm thưởng combo và phản hồi ngay trên chiến trường. Màn kết quả liệt kê từng từ và cho phép **Ôn lại từ sai**.
-- Trước khi chơi có các chế độ **Tất cả từ**, **Từ yếu**, **Ôn lại** và các mức khó **Easy**, **Normal**, **Hard**, **Custom**. Thống kê từng từ, lịch sử tối đa 50 ván gần nhất và màn **Thống kê** được lưu trong trình duyệt.
-- Kho từ hỗ trợ nhập CSV, nhập/xuất bộ từ JSON, sao lưu và khôi phục toàn bộ dữ liệu học tập cùng cài đặt.
-- Có chế độ ngày/đêm, tuyết nền, hiệu ứng chiến trường, tiếng pháo và tiếng nổ; có thể chỉnh tốc độ rơi và âm lượng, bật/tắt riêng hiệu ứng âm thanh và phóng to màn chơi.
+- Sáu bộ từ mẫu và bộ từ tự tạo. Có thể thêm, sửa, xóa, tìm kiếm, nhập CSV/JSON và sao lưu dữ liệu học tập.
+- Tra từ tiếng Anh trong **Kho từ vựng**: hiện nghĩa tiếng Việt, phiên âm, phát âm, loại từ, định nghĩa và ví dụ. Có thể thêm kết quả vào bộ từ đang học.
+- Nhiều chế độ luyện, mức khó, điểm, combo, thống kê và ôn lại từ sai.
+- Giọng UK/US, bản ghi phát âm khi có, giọng đọc của trình duyệt khi cần; có nút nghe lại và nghe chậm.
+- Bàn phím chữ ảo trên màn hình cảm ứng, giao diện cho điện thoại và chế độ ngày/đêm.
 
-## Cài đặt và chạy
+## Chạy trên máy
 
-Cần có **Node.js** và **npm**. Clone dự án rồi chạy:
+Cần Node.js và npm. Trong thư mục project, chạy:
 
 ```bash
-git clone https://github.com/shaunyasuo30/Word-Castle.git
-cd Word-Castle
 npm ci
 npm run dev
 ```
 
-Mở địa chỉ Vite hiển thị trong terminal, thường là `http://localhost:5173`. Dự án dùng TSX nên cần chạy qua **Vite**; mở trực tiếp `index.html` bằng Live Server/Go Live sẽ không chạy đúng.
+Mở địa chỉ Vite in ra trong terminal, thường là `http://localhost:5173`. Cần chạy qua Vite để các endpoint tra từ hoạt động; mở trực tiếp `index.html` bằng Live Server không hỗ trợ chúng.
+
+```bash
+npm test       # Chạy kiểm thử
+npm run build  # Kiểm tra TypeScript và tạo dist/
+npm run preview
+```
+
+`npm run preview` chỉ xem bản build tĩnh; để thử đầy đủ phần tra nghĩa tiếng Việt trên máy, dùng `npm run dev`.
 
 ## Cách chơi
 
-1. Chọn một bộ từ và bấm **Bắt đầu**.
-2. Chọn chế độ luyện, độ khó và giọng đọc; bấm **Bật âm thanh & bắt đầu** rồi chờ màn đếm ngược **GO!**.
-3. Nghe từ rồi gõ các chữ cái **A–Z** theo đúng thứ tự, hoặc dùng bàn phím ảo trên thiết bị cảm ứng. Mỗi chữ là một phát bắn.
-4. Dùng **Nghe lại**, **Nghe chậm**, **Pause/Resume** hoặc điều chỉnh tốc độ rơi khi cần. Đừng để ô từ chạm tường.
-5. Xem kết quả từng từ sau ván và chọn **Ôn lại từ sai** nếu có từ làm sai hoặc bỏ lỡ.
+1. Chọn bộ từ và bấm **Bắt đầu**.
+2. Chọn chế độ luyện, mức khó và giọng đọc; bấm **Bật âm thanh & bắt đầu**.
+3. Nghe từ rồi gõ các chữ cái A–Z theo thứ tự, hoặc dùng bàn phím ảo trên điện thoại.
+4. Dùng **Nghe lại**, **Nghe chậm** hoặc **Pause/Resume** khi cần. Sau ván chơi, xem kết quả và chọn **Ôn lại từ sai**.
 
-## Các lệnh
+## Tra từ và lưu dữ liệu
 
-| Lệnh | Mục đích |
-| --- | --- |
-| `npm run dev` | Chạy ứng dụng để phát triển. |
-| `npm test` | Chạy kiểm thử Vitest. |
-| `npm run build` | Kiểm tra TypeScript và tạo bản phát hành trong `dist/`. |
-| `npm run preview` | Xem thử bản build trên máy. |
+Phần **Dictionary** lấy nghĩa tiếng Việt qua Google Translate và dùng [MyMemory](https://mymemory.translated.net/doc/spec.php) khi nguồn đầu tiên bị giới hạn. Loại từ, định nghĩa, ví dụ và audio được lấy từ [Free Dictionary API](https://dictionaryapi.dev/). Nút loa ưu tiên audio của API; nếu không có thì dùng Web Speech của trình duyệt. Không có dữ liệu từ điển được ghi cứng trong ứng dụng.
 
-Để đưa game lên một trang web công khai, hãy build rồi triển khai nội dung `dist/` lên dịch vụ hosting tĩnh. Việc đẩy mã lên GitHub chỉ lưu mã nguồn; nó không tự xuất bản game.
+Ứng dụng gọi `/api/translate` để lấy nghĩa tiếng Việt và ưu tiên `/api/dictionary` để lấy dữ liệu từ điển; nếu endpoint từ điển không khả dụng, trình duyệt thử gọi Free Dictionary API trực tiếp. Hai endpoint cùng domain này chạy bằng Vite khi phát triển và bằng Vercel Functions khi triển khai. Nghĩa tiếng Việt có thể dùng ngay trong lúc định nghĩa chi tiết còn tải. Vì vậy tính năng tra nghĩa tiếng Việt cần môi trường có hỗ trợ các endpoint `api/`; chỉ tải riêng thư mục `dist/` lên hosting tĩnh sẽ thiếu tính năng này. Tra từ cần Internet và các dịch vụ miễn phí có thể tạm thời gián đoạn.
 
-## Dữ liệu và âm thanh
+Khi thêm từ đã tra, bạn có thể sửa nghĩa tiếng Việt trước khi lưu. Từ được đưa vào đúng bộ từ hiện có và dùng ngay trong game. Game chỉ nhận từ tiếng Anh gồm chữ A–Z, tối đa 14 ký tự; mỗi bộ chứa tối đa 500 từ.
 
-Bộ từ tự tạo, thống kê học tập, lịch sử ván và các lựa chọn cá nhân được lưu bằng `localStorage` theo địa chỉ trang. Xóa dữ liệu trình duyệt hoặc chuyển sang địa chỉ khác có thể làm bạn không còn thấy dữ liệu cũ. Có thể dùng **Sao lưu toàn bộ** trong kho từ để tải bản sao JSON. Từ tiếng Anh trong kho chỉ nhận chữ A–Z, không có khoảng trắng.
+`localStorage` gắn với địa chỉ trang và trình duyệt đang dùng. Xóa dữ liệu trình duyệt hoặc đổi địa chỉ trang có thể làm mất dữ liệu đã lưu; hãy dùng **Sao lưu toàn bộ** trong Kho từ vựng để tải bản sao JSON.
 
-Bản ghi phát âm từ vựng cần Internet. Nếu không tải được bản ghi, game dùng giọng Web Speech của trình duyệt nếu có. Tiếng bắn hiện được tổng hợp ngắn bằng Web Audio; tiếng nổ và các tiếng hô **GO/VICTORY/DEFEAT** nằm trong `public/sfx/` và được tải từ chính ứng dụng. Nguồn các bản thu cùng giấy phép CC0 được ghi tại [public/sfx/SOURCE.md](public/sfx/SOURCE.md). Dự án không sử dụng bản ghi Cambridge.
+## Đưa mã lên GitHub và triển khai
 
-## Cấu trúc dự án
+Repository hiện dùng nhánh `master`. Kiểm tra các file trước khi đưa lên GitHub, rồi chạy:
+
+```bash
+git status --short
+git add .
+git commit -m "Update Word Castle dictionary and mobile layout"
+git push origin master
+```
+
+`.gitignore` loại `node_modules/`, `dist/`, file môi trường và cấu hình Vercel cục bộ. Giữ `package-lock.json`, thư mục `api/`, mã nguồn và các file âm thanh trong `public/` trong commit.
+
+Để trang công khai có đủ chức năng tra từ, kết nối repository với [Vercel](https://vercel.com/docs/frameworks/frontend/vite), chọn project Vite ở thư mục gốc, build bằng `npm run build` và dùng thư mục output `dist`. Các file trong `api/` sẽ được triển khai thành Vercel Functions. Nếu project Vercel đã kết nối với repository và `master` là nhánh production, push lên `master` sẽ tạo bản triển khai mới. Kiểm tra `/api/translate?word=beautiful` và `/api/dictionary?word=beautiful` trên domain sau khi triển khai.
+
+## Cấu trúc chính
 
 ```text
-src/
-├── App.tsx              # Điều hướng các màn hình
-├── components/          # Kho từ, thống kê và giao diện màn chơi
-├── data/sampleSets.ts   # Các bộ từ mẫu
-├── game/                # Luật chơi và phần vẽ Canvas
-└── services/            # Lưu từ vựng, thống kê, lịch sử, sao lưu và âm thanh
-public/sfx/              # Bản thu âm thanh và thông tin nguồn
+api/                 # Endpoint tra nghĩa tiếng Việt và dữ liệu từ điển
+public/sfx/          # Âm thanh game và thông tin nguồn
+src/components/      # Giao diện game, kho từ và thống kê
+src/game/            # Luật chơi và phần vẽ Canvas
+src/services/        # Tra từ, âm thanh và lưu dữ liệu học tập
 ```
+
+Nguồn và giấy phép của các bản thu game được ghi trong [public/sfx/SOURCE.md](public/sfx/SOURCE.md).

@@ -33,6 +33,16 @@ it('exports a versioned set and imports it with new IDs without overwriting the 
   expect(() => importSetJson('{"version":2,"set":{}}')).toThrow()
 })
 
+it('keeps dictionary details when a vocabulary set is exported and imported', () => {
+  const detailed: VocabularySet = { id: 'dictionary', name: 'Dictionary', words: [{
+    id: 'beautiful', word: 'beautiful', meaning: 'đẹp', dictionary: {
+      word: 'beautiful', phonetic: '/beautiful/', phonetics: [{ audio: 'https://example.com/beautiful.mp3' }],
+      meanings: [{ partOfSpeech: 'adjective', definitions: [{ definition: 'Pleasing to see.', example: 'A beautiful day.', synonyms: ['pretty'], antonyms: [] }], synonyms: [], antonyms: [] }],
+    },
+  }] }
+  expect(importSetJson(exportSetJson(detailed)).set.words[0].dictionary).toEqual(detailed.words[0].dictionary)
+})
+
 it('restores vocabulary, statistics, history and settings only after validation', () => {
   vocabularyStorage.save([set])
   learningStatsStorage.recordResults(set, [{ wordId: 'a', word: 'apple', meaning: 'táo', outcome: 'perfect', correctLetters: 5, wrongLetters: 0, score: 120 }])

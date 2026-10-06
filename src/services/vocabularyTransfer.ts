@@ -1,5 +1,6 @@
 import type { VocabularyItem, VocabularySet } from '../types/vocabulary'
 import { MAX_WORDS_PER_SET } from '../data/sampleSets'
+import { parseDictionaryResponse } from './dictionaryService'
 
 export interface ImportSummary {
   imported: number
@@ -84,7 +85,7 @@ export function importSetJson(text: string): { set: VocabularySet; summary: Impo
   const seen = new Set<string>()
   const words: VocabularyItem[] = []
   for (const [index, raw] of source.words.entries()) {
-    const item = raw && typeof raw === 'object' ? raw as { word?: unknown; meaning?: unknown } : {}
+    const item = raw && typeof raw === 'object' ? raw as { word?: unknown; meaning?: unknown; dictionary?: unknown } : {}
     const entry = typeof item.word === 'string' && typeof item.meaning === 'string'
       ? validateVocabularyEntry(item.word, item.meaning) : null
     if (!entry) {
@@ -94,7 +95,12 @@ export function importSetJson(text: string): { set: VocabularySet; summary: Impo
       summary.skipped++
       if (summary.messages.length < 8) summary.messages.push(`Mục ${index + 1}: trùng từ hoặc bộ đã đầy.`)
     } else {
-      words.push({ id: crypto.randomUUID(), ...entry })
+      let dictionary
+      if (item.dictionary) {
+        try { dictionary = parseDictionaryResponse([item.dictionary]) }
+        catch { /* Keep a valid game word even if optional metadata is invalid. */ }
+      }
+      words.push({ id: crypto.randomUUID(), ...entry, ...(dictionary ? { dictionary } : {}) })
       seen.add(entry.word)
       summary.imported++
     }

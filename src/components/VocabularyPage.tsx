@@ -5,6 +5,7 @@ import type { VocabularyItem, VocabularySet } from '../types/vocabulary'
 import { MAX_WORDS_PER_SET } from '../data/sampleSets'
 import { exportSetJson, importCsvIntoSet, importSetJson, validateVocabularyEntry, type ImportSummary } from '../services/vocabularyTransfer'
 import { backupStorage } from '../services/backupStorage'
+import DictionaryLookup from './DictionaryLookup'
 
 interface Props {
   sets: VocabularySet[]
@@ -141,6 +142,7 @@ export default function VocabularyPage({ sets, onChange, onBack, onPlay, onResto
       <div><span className="eyebrow">XÂY KHO TỪ CỦA BẠN</span><h1>Kho từ vựng <span>📚</span></h1><p>Tạo bộ từ riêng và biến mỗi chữ cái thành một chiến thắng.</p></div>
       <div className="heading-count"><strong>{sets.reduce((sum, set) => sum + set.words.length, 0)}</strong><span>TỪ ĐÃ LƯU</span></div>
     </div>
+    <DictionaryLookup sets={sets} onChange={onChange} />
     <div className="transfer-panel panel"><strong>Dữ liệu từ vựng</strong><div>
       <button type="button" onClick={() => selected && download(`${selected.name}.json`, exportSetJson(selected))} disabled={!selected}>Xuất bộ (JSON)</button>
       <button type="button" onClick={() => csvInput.current?.click()} disabled={!selected}>Nhập CSV vào bộ</button>
@@ -169,7 +171,7 @@ export default function VocabularyPage({ sets, onChange, onBack, onPlay, onResto
         {selected ? <>
           <div className="words-header"><div><span className="eyebrow">BỘ TỪ ĐANG CHỌN</span><h2>{selected.name}</h2><p>{selected.words.length}/{MAX_WORDS_PER_SET} từ vựng · {selected.words.length >= MAX_WORDS_PER_SET ? 'Bộ từ đã đầy' : 'Sẵn sàng để luyện tập'}</p></div><div className="words-actions"><button className="icon-danger" title="Xóa bộ từ" aria-label="Xóa bộ từ" onClick={() => removeSet(selected.id)}><Trash2 size={19} /></button><button className="button button-primary" onClick={() => onPlay(selected.id)} disabled={selected.words.length === 0}><Play size={18} fill="currentColor" /> Chơi bộ này</button></div></div>
           <div className="word-search"><input aria-label="Tìm từ trong bộ" placeholder="Tìm từ tiếng Anh hoặc nghĩa tiếng Việt..." value={query} onChange={event => { setQuery(event.target.value); setListPage(0) }} /><span>{filteredWords.length} từ phù hợp</span></div>
-          <div className="word-table"><div className="table-heading"><span>TỪ TIẾNG ANH</span><span>NGHĨA TIẾNG VIỆT</span><span></span></div>
+          <div className="word-table"><div className="table-heading"><span>TỪ TIẾNG ANH</span><span>NGHĨA / ĐỊNH NGHĨA</span><span></span></div>
             {pageWords.map(({ item, index }) => <div className="word-row" key={item.id}><span className="word-name"><i>{String(index + 1).padStart(2, '0')}</i>{item.word}</span><span className="word-meaning">{item.meaning}</span><span className="row-actions"><button title={`Sửa ${item.word}`} aria-label={`Sửa ${item.word}`} onClick={() => editWord(item)}><Edit3 size={17} /></button><button title={`Xóa ${item.word}`} aria-label={`Xóa ${item.word}`} onClick={() => updateSet({ ...selected, words: selected.words.filter(word => word.id !== item.id) })}><Trash2 size={17} /></button></span></div>)}
             {selected.words.length === 0 && <div className="empty-words">Bộ từ đang trống. Thêm từ đầu tiên để bắt đầu chơi.</div>}
             {selected.words.length > 0 && filteredWords.length === 0 && <div className="empty-words">Không tìm thấy từ phù hợp.</div>}

@@ -179,6 +179,8 @@ html[data-theme='night'] .sample-badge { background:#674f9f; color:#fff2ce; }
 @media (max-width:680px) {
   .theme-toggle { right:12px; bottom:12px; min-width:44px; padding:10px; justify-content:center; }
   .theme-toggle span { display:none; }
+  body:has(.game-page, .library-page) .theme-toggle { position:absolute; top:10px; right:14px; bottom:auto; }
+  .game-topbar .brand-mini, .library-page .topbar .brand-mini { margin-right:50px; font-size:0; }
   .game-footer { display:flex; justify-content:center; padding-bottom:25px; text-align:center; font-size:10px; }
   .word-search { padding:10px 16px; }
   .word-search span { display:none; }

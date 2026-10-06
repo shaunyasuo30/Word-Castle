@@ -1,0 +1,54 @@
+.dictionary-panel { margin-bottom:18px; padding:22px 26px; }
+.dictionary-heading h2 { display:flex; align-items:center; gap:9px; margin:4px 0; color:#344164; font-size:25px; }
+.dictionary-heading p { margin:0 0 16px; color:#75829a; font-size:13px; font-weight:700; }
+.dictionary-search { display:flex; gap:10px; }
+.dictionary-search input, .dictionary-text-input { min-width:0; width:100%; padding:12px 14px; border:1px solid #ccd3e2; border-radius:11px; background:#fff; color:#263a5b; }
+.dictionary-search .button { flex:none; }
+.dictionary-error, .dictionary-success { margin:12px 0 0; font-size:13px; font-weight:800; }
+.dictionary-error { color:#b4435c; }
+.dictionary-success { position:fixed; z-index:90; right:20px; bottom:20px; max-width:min(360px,calc(100vw - 40px)); margin:0; padding:13px 17px; border:1px solid #9adfc3; border-radius:12px; background:#e6fff2; color:#19725c; box-shadow:0 12px 32px #0d263b55; }
+.dictionary-result { margin-top:20px; padding-top:18px; border-top:1px solid #dce1ec; }
+.dictionary-result-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.dictionary-result-heading h3 { margin:0; color:#2b3d65; font-size:30px; }
+.dictionary-phonetic { display:block; margin-top:2px; color:#72809d; font-size:15px; }
+.dictionary-translation { display:flex; flex-direction:column; gap:4px; margin-top:16px; padding:12px 14px; border:1px solid #b9e5d9; border-radius:10px; background:#e4f7ef; color:#247b6a; }
+.dictionary-translation small { font-size:11px; font-weight:800; letter-spacing:.08em; }
+.dictionary-translation strong { font-size:18px; overflow-wrap:anywhere; }
+.dictionary-pronounce { display:inline-flex; align-items:center; gap:7px; padding:9px 12px; border:1px solid #b9e5d9; border-radius:10px; background:#e4f7ef; color:#247b6a; font-weight:800; }
+.dictionary-meaning { margin-top:18px; }
+.dictionary-meaning h4 { margin:0 0 8px; color:#6a54a4; font-size:17px; }
+.dictionary-meaning ol { margin:0; padding-left:24px; }
+.dictionary-meaning li { padding-left:3px; margin-bottom:10px; color:#35435f; }
+.dictionary-meaning li p { margin:0 0 4px; line-height:1.5; }
+.dictionary-example { color:#687995; font-style:italic; }
+.dictionary-related { margin:6px 0; color:#5f718b; font-size:13px; overflow-wrap:anywhere; }
+.dictionary-add { margin-top:16px; }
+.dictionary-modal-backdrop { position:fixed; z-index:80; inset:0; display:grid; place-items:center; padding:16px; background:#0d1932b8; }
+.dictionary-modal { width:min(100%,480px); max-height:min(90vh,750px); overflow:auto; padding:22px; border-radius:18px; background:#fffaf6; box-shadow:0 24px 65px #07132b80; }
+.dictionary-modal-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.dictionary-modal-heading h3 { margin:0 0 14px; color:#344164; font-size:20px; }
+.dictionary-modal-heading button { display:grid; place-items:center; border:0; background:none; color:#53627d; }
+.dictionary-set-list { display:grid; gap:7px; max-height:190px; overflow:auto; }
+.dictionary-set-list label, .dictionary-new-set { display:flex; align-items:center; gap:10px; padding:9px 10px; border:1px solid #e0d9e8; border-radius:9px; color:#394865; font-weight:800; cursor:pointer; }
+.dictionary-set-list label span { display:flex; justify-content:space-between; gap:8px; width:100%; }
+.dictionary-set-list small { color:#8692a5; white-space:nowrap; }
+.dictionary-new-set { margin-top:9px; }
+.dictionary-modal input[type='radio'] { accent-color:#7862bc; }
+.dictionary-modal .dictionary-text-input { margin-top:9px; }
+.dictionary-meaning-input { display:block; margin-top:14px; color:#3e4c67; font-size:13px; font-weight:800; }
+.dictionary-meaning-input small { display:block; margin-top:5px; color:#78859b; font-weight:600; }
+.dictionary-modal-actions { display:flex; justify-content:flex-end; gap:9px; margin-top:17px; }
+html[data-theme='night'] .dictionary-panel { background:#26365d; border-color:#7080aa70; }
+html[data-theme='night'] .dictionary-heading h2, html[data-theme='night'] .dictionary-result-heading h3, html[data-theme='night'] .dictionary-meaning li { color:#f7f4ff; }
+html[data-theme='night'] .dictionary-heading p, html[data-theme='night'] .dictionary-phonetic, html[data-theme='night'] .dictionary-example, html[data-theme='night'] .dictionary-related { color:#c3cee5; }
+html[data-theme='night'] .dictionary-result { border-color:#ffffff30; }
+html[data-theme='night'] .dictionary-meaning h4 { color:#cebaff; }
+html[data-theme='night'] .dictionary-translation { border-color:#478c78; background:#1c514f; color:#e5fff3; }
+@media (max-width:680px) {
+  .library-layout { grid-template-columns:minmax(0,1fr); }
+  .library-layout > * { min-width:0; }
+  .dictionary-panel { padding:16px; }
+  .dictionary-search { flex-direction:column; }
+  .dictionary-result-heading { align-items:flex-start; flex-direction:column; }
+  .dictionary-modal { padding:16px; }
+}
