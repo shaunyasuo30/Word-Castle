@@ -1,0 +1,112 @@
+WORD CASTLE - MÔ TẢ HIỆN TRẠNG PROJECT
+Ngày ghi nhận: 06/10/2026
+Ghi chú: Đây là bản mô tả trước đợt bổ sung gameplay, thống kê, luyện từ yếu, bàn phím ảo và nhập/xuất dữ liệu. README.md mô tả tính năng hiện tại.
+
+1. TỔNG QUAN
+
+Word Castle là trò chơi luyện nghe và đánh vần từ tiếng Anh trên trình duyệt. Giao diện hướng dẫn bằng tiếng Việt. Trong mỗi lượt, trò chơi đọc một từ tiếng Anh, một ô chứa các chữ cái chưa hiện ra rơi dần về phía tường thành, và người chơi gõ từng chữ A-Z để bắn đạn vào vị trí chữ tiếp theo. Mục tiêu là hoàn thành từ trước khi ô từ chạm tường.
+
+Project là ứng dụng web một trang. Phần giao diện viết bằng React và TypeScript; trò chơi được vẽ bằng Canvas 2D. Ứng dụng được đóng gói bằng Vite. Kho từ và các cài đặt cá nhân được lưu trong localStorage của trình duyệt. Project hiện không có máy chủ ứng dụng, tài khoản, đồng bộ dữ liệu hoặc cơ sở dữ liệu riêng.
+
+2. CÁC MÀN HÌNH VÀ LUỒNG SỬ DỤNG
+
+Trang chủ: Hiển thị tên Word Castle, thông điệp “Nghe từ. Bắn chữ. Giữ thành!”, hình minh họa lâu đài và ba thẻ giới thiệu cách chơi. Người dùng có thể mở kho từ hoặc đến màn chọn bộ từ. Nút đổi giao diện ngày/đêm luôn hiện trên các màn hình.
+
+Kho từ vựng: Hiển thị danh sách bộ từ, số từ trong từng bộ và tổng số từ đang lưu. Người dùng có thể chọn bộ, tạo bộ mới, xóa bộ sau hộp thoại xác nhận, tìm từ theo chữ tiếng Anh hoặc nghĩa tiếng Việt, thêm từ, sửa từ, xóa từ và bắt đầu chơi bộ đang chọn. Danh sách từ có phân trang, 50 từ mỗi trang. Bộ rỗng không thể bắt đầu chơi.
+
+Màn chọn bộ từ: Hiển thị mỗi bộ dưới dạng một thẻ với tên và số lượng từ. Nút bắt đầu của bộ rỗng bị vô hiệu hóa. Có lối tắt sang kho từ để tạo bộ mới.
+
+Màn chơi: Hiển thị tên bộ từ, điểm, tiến độ, ba biểu tượng mạng, lựa chọn giọng UK/US, danh sách giọng đọc dự phòng của thiết bị, thanh tốc độ rơi, thanh âm lượng, nút bật/tắt hiệu ứng âm thanh và nút toàn màn hình. Vùng Canvas hiển thị nền chiến trường, ô từ, pháo, đạn, tường thành và hiệu ứng va chạm. Trước ván có nút bắt đầu và nút nghe thử từ “hello”. Trong lúc chơi có nút nghe lại và nghe chậm. Khi kết thúc có bảng kết quả, nút chơi lại và nút về trang chủ.
+
+Luồng thông thường: mở trang chủ -> vào kho từ hoặc màn chọn bộ -> chọn bộ có ít nhất một từ -> mở màn chơi -> tùy chỉnh âm thanh, giọng đọc, tốc độ -> bấm bắt đầu -> chờ đếm ngược -> nghe từ và gõ chữ -> xem kết quả -> chơi lại hoặc về trang chủ.
+
+3. DỮ LIỆU TỪ VỰNG
+
+Mỗi bộ từ có id, tên và danh sách từ. Mỗi từ có id, từ tiếng Anh và nghĩa tiếng Việt. Khi tạo/sửa từ qua giao diện, chữ tiếng Anh được bỏ khoảng trắng ở hai đầu, chuyển thành chữ thường và chỉ được chấp nhận nếu gồm các chữ A-Z liền nhau. Trường nhập từ giới hạn 14 ký tự; trường nghĩa giới hạn 100 ký tự; tên bộ giới hạn 50 ký tự. Nghĩa không được để trống. Một bộ không được có hai mục trùng từ tiếng Anh, không phân biệt chữ hoa/thường. Mỗi bộ có tối đa 500 từ; khi đầy vẫn có thể sửa những từ đã có.
+
+Lần đầu mở ứng dụng có sáu bộ mẫu: Basic English, Animals, Vehicles, Colors, Food và Nature, tổng cộng 158 mục từ. Các bộ mẫu cũng có thể được chỉnh sửa hoặc xóa trong kho. Thứ tự từ trong mỗi ván được xáo trộn. Bộ dữ liệu mẫu nằm trong src/data/sampleSets.ts.
+
+4. LUẬT CHƠI VÀ TRẠNG THÁI VÁN
+
+GameEngine quản lý các trạng thái READY, PLAYING, WORD_REVEALED, WORD_DESTROYED, WALL_HIT, GAME_OVER và VICTORY. Trò chơi bắt đầu ở READY; sau khi bấm bắt đầu có màn đếm ngược 3, 2, 1, GO!. Từng từ được lấy từ hàng đợi đã xáo trộn và xuất hiện ở vị trí ngang ngẫu nhiên gần giữa màn hình. Từ được đọc khi bắt đầu lượt.
+
+Người chơi dùng phím chữ A-Z trên bàn phím. Phím lặp tự động, phím kèm Ctrl/Alt/Meta và thao tác khi đang nhập trong ô input/select/textarea không dùng để bắn. Các chữ gõ nhanh được xếp hàng, tối đa 32 chữ chờ; mỗi thời điểm chỉ có một viên đạn đang bay. Đạn nhắm vào ô của chữ tiếp theo. Chữ chỉ được kiểm tra đúng/sai khi đạn tới mục tiêu, không phải ngay lúc bấm phím.
+
+Chữ đúng làm hiện chữ đó trên ô từ, tăng số lần gõ đúng và chuyển mục tiêu sang chữ kế tiếp. Chữ sai tạo phản hồi sai và tăng số lần gõ sai; chữ cần điền vẫn giữ nguyên. Gõ sai không trực tiếp trừ mạng. Hoàn thành toàn bộ chữ của từ cộng 100 điểm, hiện trọn từ cùng nghĩa tiếng Việt, sau đó phát hiệu ứng phá hủy rồi chuyển sang từ kế tiếp.
+
+Nếu ô từ chạm tường trước khi hoàn thành, từ đó được tính là bỏ lỡ và trừ một mạng. Trò chơi hiện đáp án cùng nghĩa trước khi tiếp tục. Ván bắt đầu với 3 mạng. Ván kết thúc khi hết mạng hoặc đã xử lý hết từ. Kết quả VICTORY chỉ xuất hiện khi không bỏ lỡ từ nào; nếu có ít nhất một từ bị bỏ lỡ thì kết quả cuối là DEFEAT, kể cả khi vẫn còn mạng. Bảng kết quả có điểm, số từ phá hủy, số từ bỏ lỡ và độ chính xác. Độ chính xác được tính bằng số chữ đúng chia cho tổng số chữ đúng và sai; từ bỏ lỡ không được cộng trực tiếp vào mẫu số này. Kết quả thắng còn hiển thị thời gian ván.
+
+Cấu hình mặc định: tốc độ rơi 18 đơn vị/giây, tốc độ đạn 1600 đơn vị/giây, 3 mạng, 100 điểm/từ. Thanh tốc độ rơi cho phép chọn từ 8 đến 48, bước 2. Vùng Canvas có kích thước nội bộ 1000 x 620; giao diện co giãn kích thước hiển thị theo khung trang.
+
+5. PHÁT ÂM TỪ VỰNG
+
+Giọng đọc mặc định là tiếng Anh Mỹ (US). Người dùng có thể đổi sang UK; lựa chọn đã lưu được dùng lại. Khi đổi UK/US, lựa chọn giọng dự phòng riêng bị xóa để ứng dụng đề xuất lại giọng phù hợp. Ngoài nút UK/US còn có danh sách các giọng tiếng Anh do Web Speech API của trình duyệt cung cấp. Giọng được chọn thủ công sẽ được lưu. Khi tự chọn giọng dự phòng, ứng dụng ưu tiên giọng cùng vùng và đánh giá thêm tên giọng như Natural/Neural.
+
+Với từ chỉ chứa A-Z, ứng dụng ưu tiên bản thu âm đúng từ và đúng vùng từ Wiktionary/Wikimedia Commons. Nó gọi API media-list của Wiktionary, chỉ nhận tên tệp dạng en-uk/en-gb/en-us tương ứng chính xác với từ và định dạng ogg/oga/mp3/wav. Âm được phát qua URL chuyển hướng của Wikimedia Commons. Ứng dụng tải trước một số từ sắp tới; kết quả tra cứu được giữ trong bộ nhớ có thời hạn. Nếu thiếu bản thu, tra cứu quá chậm, tải lỗi hoặc bản thu không phát được, ứng dụng dùng giọng tổng hợp của trình duyệt nếu trình duyệt hỗ trợ. Thời gian chờ cho bản thu trước khi chuyển sang phương án dự phòng là khoảng 1,8 giây.
+
+Nút “Nghe lại” đọc lại từ đang chơi. Nút “Nghe chậm” giảm tốc độ phát: bản thu dùng playbackRate 0,78 và giữ cao độ nếu trình duyệt hỗ trợ; giọng tổng hợp dùng rate 0,72 so với 0,88 khi đọc thường. Một lần phát âm mới dừng lần trước để tránh các từ nói chồng nhau. Khi đang dùng bản thu, chân trang màn chơi liên kết tới trang nguồn của tệp âm thanh đó. Phần bản thu cần có Internet; giọng tổng hợp phụ thuộc khả năng của trình duyệt và thiết bị.
+
+6. HIỆU ỨNG ÂM THANH
+
+Hiệu ứng được quản lý bởi src/services/soundEffects.ts qua Web Audio API. Trò chơi có âm bấm nút, nhạc mở đầu, tiếng hô GO, tiếng bắn, tiếng báo gõ sai, tiếng nổ khi phá hủy từ, tiếng va vào tường và âm kết thúc VICTORY/DEFEAT. Mỗi nút HTML trong ứng dụng phát một âm bấm ngắn khi được kích hoạt; nút bị vô hiệu hóa không phát âm này.
+
+Âm bắn hiện tại được tổng hợp từ âm trầm, một tiếng “tách” ngắn ở dải trung và lớp nhiễu rất ngắn để nghe rõ từng viên đạn mà không dùng bản thu pháo lớn trước đây. Các tệp cannon_fire_1.mp3 và cannon_fire_2.mp3 vẫn còn trong public/sfx/ nhưng không được tải để phát khi bắn. Hiệu ứng nổ, pháo hoa và tiếng hô GO/VICTORY/DEFEAT dùng các tệp MP3 trong public/sfx/. Nguồn bản thu và giấy phép CC0 được ghi trong public/sfx/SOURCE.md.
+
+Thanh âm lượng 0-100% điều chỉnh cả tiếng đọc từ và hiệu ứng. Nút tắt hiệu ứng âm thanh chỉ tắt các hiệu ứng do SoundEffects phát; nó không tắt riêng phần đọc từ. Mức âm lượng và trạng thái tắt hiệu ứng được lưu trong trình duyệt.
+
+7. GIAO DIỆN VÀ HÌNH ẢNH
+
+Giao diện có hai chủ đề ngày/đêm; mặc định là đêm. Chuyển chủ đề thay đổi màu của trang và màu nền chiến trường, đồng thời cập nhật màu theme của trình duyệt. Trang chủ dùng hình minh họa tạo bằng HTML/CSS; biểu tượng pháo là SVG trong public/cannon-logo.svg. Icon nút lấy từ lucide-react. Font tải từ Google Fonts gồm Baloo 2, Be Vietnam Pro và Nunito.
+
+Canvas 2D vẽ bầu trời, mây, ánh sáng, tháp, lửa và khói nền, tường thành, pháo, ô chữ, đường đạn, hạt hiệu ứng và hình nổ. Hình ảnh được cập nhật bằng requestAnimationFrame. Ngoài Canvas còn có lớp tuyết nền gồm 190 phần tử CSS. Giao diện có các quy tắc co giãn cho màn hình hẹp, có chế độ toàn màn hình cho khung game và xét thiết lập prefers-reduced-motion để giảm một phần chuyển động.
+
+8. LƯU TRỮ VÀ PHẠM VI DỮ LIỆU
+
+Các khóa localStorage hiện dùng:
+- word-castle:vocabulary:v1: danh sách bộ từ và từ vựng, lưu dạng JSON.
+- word-castle:samples:v2: đánh dấu đã bổ sung các bộ mẫu theo cơ chế chuyển dữ liệu một lần.
+- word-castle:theme:v1: chủ đề day/night.
+- word-castle:fall-speed: tốc độ rơi đã chọn.
+- word-castle:volume:v1: mức âm lượng.
+- word-castle:sfx-muted: trạng thái tắt hiệu ứng âm thanh.
+- word-castle:accent:v1: lựa chọn en-US hoặc en-GB.
+- word-castle:voice:v1: URI của giọng Web Speech được chọn.
+
+Khi chưa có dữ liệu kho từ, ứng dụng dùng các bộ mẫu. Khi gặp dữ liệu đã lưu từ phiên bản cũ, nó bổ sung các bộ chủ đề mẫu còn thiếu một lần và đặt dấu chuyển dữ liệu; sau đó bộ mẫu đã bị người dùng xóa không tự xuất hiện lại. Dữ liệu lưu được kiểm tra cấu trúc cơ bản trước khi sử dụng. Nếu localStorage không lưu được trong lúc chỉnh kho từ, giao diện hiển thị thông báo lỗi.
+
+Dữ liệu gắn với trình duyệt và địa chỉ website đang mở. Xóa dữ liệu trình duyệt hoặc truy cập qua địa chỉ khác có thể khiến bộ từ đã lưu không còn hiển thị. Trạng thái ván đang chơi và lịch sử kết quả không được lưu lâu dài. Ứng dụng hiện không có tính năng nhập/xuất bộ từ, tài khoản hoặc đồng bộ giữa thiết bị.
+
+9. CẤU TRÚC MÃ NGUỒN
+
+- index.html: thẻ root, tiêu đề, favicon, font và thiết lập chủ đề sớm trước khi React chạy.
+- src/main.tsx: điểm khởi động React và nhập các tệp CSS.
+- src/App.tsx: điều hướng bốn màn hình, giữ danh sách bộ từ, chủ đề và xử lý âm bấm nút.
+- src/components/VocabularyPage.tsx: giao diện và thao tác quản lý kho từ.
+- src/components/GamePage.tsx: giao diện màn chơi, vòng lặp khung hình, nhận phím, kết nối game với dịch vụ âm thanh.
+- src/components/Snowfall.tsx và BrandMark.tsx: tuyết nền và logo.
+- src/game/GameEngine.ts, config.ts, types.ts, render.ts: luật chơi, hằng số, kiểu dữ liệu và vẽ Canvas.
+- src/services/vocabularyStorage.ts: đọc/ghi và chuyển dữ liệu bộ từ trong localStorage.
+- src/services/dictionaryAudio.ts: tra bản thu từ Wiktionary và giữ cache trong bộ nhớ.
+- src/services/speechService.ts: điều phối bản thu và giọng Web Speech.
+- src/services/soundEffects.ts và audioVolume.ts: hiệu ứng âm thanh, tắt tiếng và âm lượng.
+- src/data/sampleSets.ts: sáu bộ từ mẫu.
+- src/theme.ts: đọc/ghi chủ đề.
+- src/*.css: bố cục, hình thức, responsive, chủ đề, hiệu ứng và điều khiển game.
+- public/: logo SVG, các tệp hiệu ứng MP3 và ghi chú nguồn âm thanh.
+
+10. CÔNG NGHỆ, CHẠY PROJECT VÀ KIỂM THỬ
+
+Phụ thuộc chính: React 19, React DOM, TypeScript, Vite, lucide-react. Kiểm thử dùng Vitest, jsdom và React Testing Library. Cấu hình TypeScript bật strict và kiểm tra biến/tham số không dùng.
+
+Lệnh chạy:
+- npm ci: cài phụ thuộc theo package-lock.json.
+- npm run dev: chạy máy chủ Vite phục vụ phát triển.
+- npm test: chạy các bài kiểm thử Vitest.
+- npm run build: kiểm tra TypeScript rồi tạo bản tĩnh trong dist/.
+- npm run preview: xem thử bản build.
+
+Cần chạy ứng dụng qua Vite khi phát triển; mở trực tiếp index.html không xử lý được mã TSX. Bản build là website tĩnh có thể đặt trên dịch vụ hosting tĩnh. Bộ test hiện có bao phủ luồng giao diện, quản lý từ, các trạng thái và quy tắc game, lưu trữ, phát âm, âm thanh, cùng một số chi tiết hiển thị. Ở lần kiểm tra gần nhất, 9 tệp test với 40 bài test đều đạt và lệnh build thành công.
+
+11. RANH GIỚI CỦA PHIÊN BẢN HIỆN TẠI
+
+Project tập trung vào một kiểu chơi nghe từ rồi đánh vần bằng bàn phím. Nội dung từ vựng do bộ mẫu hoặc người dùng nhập. Không có bài học theo cấp độ, hồ sơ người chơi, bảng xếp hạng, tiến độ học tập lưu dài hạn, dịch vụ backend hay hệ thống đăng nhập. Giao diện có quy tắc hiển thị trên điện thoại, nhưng thao tác bắn chữ hiện nhận phím A-Z từ bàn phím; không có bàn phím chữ cảm ứng riêng trong màn chơi. Khả năng nghe bản thu thực tế phụ thuộc Internet và việc Wiktionary/Wikimedia có tệp phù hợp; khả năng đọc dự phòng phụ thuộc trình duyệt.

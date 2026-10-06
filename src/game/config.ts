@@ -12,3 +12,10 @@ export const EXPLOSION_DURATION = 1.45
 export const WALL_HIT_DURATION = 1.15
 export const FINAL_WALL_HIT_DURATION = 1.5
 export const FALL_SPEED = { min: 8, max: 48, step: 2, default: GAME_CONFIG.fallingSpeed }
+
+export type Difficulty = 'easy' | 'normal' | 'hard' | 'custom'
+export const DIFFICULTY_SPEED: Record<Exclude<Difficulty, 'custom'>, number> = {
+  easy: 12,
+  normal: GAME_CONFIG.fallingSpeed,
+  hard: 32,
+}

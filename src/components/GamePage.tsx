@@ -1,8 +1,9 @@
 import BrandMark from './BrandMark'
-import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Expand, Heart, Home, Minimize, RotateCcw, Volume1, Volume2, VolumeX } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowLeft, Expand, Heart, Home, Minimize, Pause, Play, RotateCcw, Volume1, Volume2, VolumeX } from 'lucide-react'
 import { GameEngine } from '../game/GameEngine'
-import { FALL_SPEED, GAME_CONFIG, FIELD } from '../game/config'
+import { DIFFICULTY_SPEED, FALL_SPEED, GAME_CONFIG, FIELD, type Difficulty } from '../game/config'
+import { selectPracticeWords } from '../game/practice'
 import { renderGame } from '../game/render'
 import type { GameSnapshot } from '../game/types'
 import { speechService, type Accent } from '../services/speechService'
@@ -10,6 +11,10 @@ import { soundEffects } from '../services/soundEffects'
 import { getAudioVolume, setAudioVolume } from '../services/audioVolume'
 import type { VocabularySet } from '../types/vocabulary'
 import type { Theme } from '../theme'
+import type { VocabularyItem } from '../types/vocabulary'
+import { learningStatsStorage } from '../services/learningStatsStorage'
+import { gameHistoryStorage, type PracticeMode } from '../services/gameHistoryStorage'
+import VirtualKeyboard from './VirtualKeyboard'
 
 interface Props { set: VocabularySet; onHome: () => void; theme?: Theme }
 
@@ -20,15 +25,44 @@ function savedSpeed(): number {
   } catch { return FALL_SPEED.default }
 }
 
-function GameSession({ set, onHome, onReplay, theme = 'night' }: Props & { onReplay: () => void }) {
+function savedDifficulty(): Difficulty {
+  try {
+    const value = localStorage.getItem('word-castle:difficulty:v1')
+    if (value === 'easy' || value === 'normal' || value === 'hard' || value === 'custom') return value
+    return localStorage.getItem('word-castle:fall-speed') === null ? 'normal' : 'custom'
+  } catch { return 'normal' }
+}
+
+function handleLetterInput(engine: GameEngine | null, letter: string): void {
+  engine?.shoot(letter)
+}
+
+function GameSession({ set, onHome, onReplay, onReview, forcedWords, theme = 'night' }: Props & {
+  onReplay: () => void
+  onReview: (wordIds: string[]) => void
+  forcedWords: VocabularyItem[] | null
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const frameRef = useRef<HTMLDivElement>(null)
   const engineRef = useRef<GameEngine | null>(null)
-  const [speed, setSpeed] = useState(savedSpeed)
+  const [mode, setMode] = useState<PracticeMode>(forcedWords ? 'review' : 'all')
+  const [difficulty, setDifficulty] = useState<Difficulty>(savedDifficulty)
+  const [speed, setSpeed] = useState(() => {
+    const chosen = savedDifficulty()
+    return chosen === 'custom' ? savedSpeed() : DIFFICULTY_SPEED[chosen]
+  })
+  const selectedWords = useMemo(() => forcedWords ?? selectPracticeWords(
+    set.words, set.id, mode, learningStatsStorage.load(), gameHistoryStorage.load(),
+  ), [forcedWords, mode, set])
+  const modeRef = useRef(mode)
+  const difficultyRef = useRef(difficulty)
+  modeRef.current = mode
+  difficultyRef.current = difficulty
   const [volume, setVolume] = useState(getAudioVolume)
   const [muted, setMuted] = useState(() => soundEffects.isMuted())
   const [fullscreen, setFullscreen] = useState(false)
-  const [snapshot, setSnapshot] = useState<GameSnapshot>(() => new GameEngine(set.words, GAME_CONFIG).snapshot)
+  const [snapshot, setSnapshot] = useState<GameSnapshot>(() => new GameEngine(selectedWords, GAME_CONFIG).snapshot)
+  const [progressError, setProgressError] = useState('')
   const [voices, setVoices] = useState(() => speechService.getEnglishVoices())
   const [accent, setAccent] = useState<Accent>(() => speechService.getAccent())
   const [voiceURI, setVoiceURI] = useState(() => speechService.getSelectedVoiceURI())
@@ -47,7 +81,7 @@ function GameSession({ set, onHome, onReplay, theme = 'night' }: Props & { onRep
   }, [])
 
   useEffect(() => {
-    const engine = new GameEngine(set.words, { ...GAME_CONFIG, fallingSpeed: savedSpeed() })
+    const engine = new GameEngine(selectedWords, { ...GAME_CONFIG, fallingSpeed: speed })
     engineRef.current = engine
     engine.onChange = setSnapshot
     engine.onSound = event => soundEffects.play(event)
@@ -55,16 +89,36 @@ function GameSession({ set, onHome, onReplay, theme = 'night' }: Props & { onRep
       speechService.prefetch(engine.queue.slice(0, 3).map(item => item.word))
       speechService.speak(word)
     }
+    engine.onFinish = result => {
+      const playedAt = new Date().toISOString()
+      try { learningStatsStorage.recordResults(set, result.wordResults, playedAt) }
+      catch { setProgressError('Không thể lưu thống kê học tập trên trình duyệt này.') }
+      try {
+        gameHistoryStorage.add({
+          id: `${Date.now()}-${Math.random()}`, playedAt, setId: set.id, setName: set.name,
+          mode: modeRef.current, difficulty: difficultyRef.current, score: result.score,
+          accuracy: result.correctKeys + result.wrongKeys
+            ? Math.round(result.correctKeys / (result.correctKeys + result.wrongKeys) * 100) : 0,
+          completed: result.destroyed, missed: result.missed, duration: Math.round(result.elapsed),
+          wordResults: result.wordResults,
+        })
+      } catch { setProgressError('Không thể lưu lịch sử ván trên trình duyệt này.') }
+    }
     setSnapshot(engine.snapshot)
     const canvas = canvasRef.current
     const ctx = canvas?.getContext('2d')
     let frame = 0
     let previous = 0
+    let visualTime = 0
     const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
     const tick = (now: number) => {
-      if (previous) engine.update((now - previous) / 1000)
+      if (previous && !engine.paused) {
+        const dt = (now - previous) / 1000
+        engine.update(dt)
+        visualTime += dt
+      }
       previous = now
-      if (ctx) renderGame(ctx, engine, reduceMotion ? 0 : now / 1000, themeRef.current)
+      if (ctx) renderGame(ctx, engine, reduceMotion ? 0 : visualTime, themeRef.current, reduceMotion)
       frame = requestAnimationFrame(tick)
     }
     frame = requestAnimationFrame(tick)
@@ -73,7 +127,7 @@ function GameSession({ set, onHome, onReplay, theme = 'night' }: Props & { onRep
         !/^[a-z]$/i.test(event.key) ||
         (event.target instanceof HTMLElement &&
           event.target.closest('input, select, textarea, [contenteditable="true"]'))) return
-      engine.shoot(event.key)
+      handleLetterInput(engineRef.current, event.key)
     }
     window.addEventListener('keydown', onKeyDown)
     return () => {
@@ -83,13 +137,14 @@ function GameSession({ set, onHome, onReplay, theme = 'night' }: Props & { onRep
       soundEffects.stopMusic()
       engineRef.current = null
     }
-  }, [set])
+  }, [set, selectedWords])
 
   const ended = snapshot.state === 'GAME_OVER' || snapshot.state === 'VICTORY'
   const accuracy = snapshot.correctKeys + snapshot.wrongKeys
     ? Math.round(snapshot.correctKeys / (snapshot.correctKeys + snapshot.wrongKeys) * 100) : 0
+  const reviewIds = snapshot.wordResults.filter(result => result.outcome === 'missed' || result.wrongLetters > 0).map(result => result.wordId)
   const replaySpeech = (slow = false) => {
-    if (snapshot.activeWord && snapshot.state === 'PLAYING') speechService.speak(snapshot.activeWord.word, slow)
+    if (!snapshot.paused && snapshot.activeWord && snapshot.state === 'PLAYING') speechService.speak(snapshot.activeWord.word, slow)
   }
   const beginGame = () => {
     soundEffects.unlock()
@@ -108,12 +163,21 @@ function GameSession({ set, onHome, onReplay, theme = 'night' }: Props & { onRep
     setAccent(next)
     setVoiceURI('')
     setVoices(speechService.getEnglishVoices())
-    if (snapshot.state === 'PLAYING' && snapshot.activeWord) speechService.speak(snapshot.activeWord.word)
+    if (!snapshot.paused && snapshot.state === 'PLAYING' && snapshot.activeWord) speechService.speak(snapshot.activeWord.word)
   }
   const changeSpeed = (value: number) => {
     setSpeed(value)
+    setDifficulty('custom')
     engineRef.current?.setFallingSpeed(value)
     try { localStorage.setItem('word-castle:fall-speed', String(value)) } catch { /* keep current session setting */ }
+    try { localStorage.setItem('word-castle:difficulty:v1', 'custom') } catch { /* keep current session setting */ }
+  }
+  const changeDifficulty = (next: Difficulty) => {
+    setDifficulty(next)
+    const value = next === 'custom' ? savedSpeed() : DIFFICULTY_SPEED[next]
+    setSpeed(value)
+    engineRef.current?.setFallingSpeed(value)
+    try { localStorage.setItem('word-castle:difficulty:v1', next) } catch { /* keep current session setting */ }
   }
   const changeVolume = (value: number) => {
     const next = setAudioVolume(value)
@@ -131,10 +195,23 @@ function GameSession({ set, onHome, onReplay, theme = 'night' }: Props & { onRep
     soundEffects.setMuted(!muted)
     setMuted(!muted)
   }
+  const togglePause = () => {
+    const engine = engineRef.current
+    if (!engine) return
+    if (engine.paused) {
+      engine.resume()
+      if (engine.state === 'PLAYING' && engine.word) speechService.speak(engine.word.word)
+    } else {
+      engine.pause()
+      speechService.stop()
+      soundEffects.stopMusic()
+    }
+  }
 
   return <div className="game-page page-shell">
     <header className="topbar game-topbar"><button className="back-button" onClick={onHome}><ArrowLeft size={19} /> Thoát game</button><span className="brand-mini"><BrandMark /> WORD CASTLE</span><span className="topbar-tag">PHÒNG THỦ TỪ VỰNG</span></header>
     <div className="game-heading"><div><span className="eyebrow">BỘ TỪ: {set.name.toUpperCase()}</span><h1>Bảo vệ lâu đài!</h1></div><div className="game-heading-aside"><span className="game-level-chip">✦ SPELL QUEST</span><p>Nghe thật kỹ, gõ từng chữ cái và bắn hạ mục tiêu.</p></div></div>
+    <p className="landscape-hint">Xoay ngang thiết bị để có thêm không gian chơi.</p>
     <div className="game-frame" ref={frameRef}>
       <div className="game-hud">
         <div className="hud-score"><small>ĐIỂM SỐ</small><strong>{snapshot.score.toLocaleString('vi-VN')}</strong></div>
@@ -142,25 +219,35 @@ function GameSession({ set, onHome, onReplay, theme = 'night' }: Props & { onRep
         <div className="hud-lives"><small>MẠNG CÒN LẠI</small><div>{Array.from({ length: GAME_CONFIG.startingLives }, (_, i) => <Heart key={i} size={25} fill={i < snapshot.lives ? '#ff7487' : '#68738a'} color={i < snapshot.lives ? '#ff7487' : '#68738a'} />)}</div></div>
         <div className="hud-voice"><small>GIỌNG ĐỌC</small><div className="hud-voice-options"><div className="accent-switch" role="group" aria-label="Chọn giọng Anh Anh hoặc Anh Mỹ"><button className={accent === 'en-GB' ? 'active' : ''} aria-pressed={accent === 'en-GB'} onClick={() => changeAccent('en-GB')}>🇬🇧 UK</button><button className={accent === 'en-US' ? 'active' : ''} aria-pressed={accent === 'en-US'} onClick={() => changeAccent('en-US')}>🇺🇸 US</button></div><label className="voice-picker"><span className="sr-only">Giọng dự phòng</span><select aria-label="Chọn giọng dự phòng" value={voiceURI} onChange={event => changeVoice(event.target.value)} disabled={voices.length === 0}><option value="">Giọng đề xuất</option>{voices.map(voice => <option key={voice.voiceURI} value={voice.voiceURI}>{voice.name} · {voice.lang}</option>)}</select></label></div></div>
         <div className="hud-speed"><label htmlFor="fall-speed">TỐC ĐỘ RƠI <b>{speed < 16 ? 'Chậm' : speed > 28 ? 'Nhanh' : 'Vừa'}</b></label><input id="fall-speed" type="range" min={FALL_SPEED.min} max={FALL_SPEED.max} step={FALL_SPEED.step} value={speed} onChange={event => changeSpeed(Number(event.target.value))} aria-label="Tốc độ rơi" /><label htmlFor="game-volume" className="volume-label">ÂM LƯỢNG <b>{volume}%</b></label><input id="game-volume" type="range" min="0" max="100" step="5" value={volume} onChange={event => changeVolume(Number(event.target.value))} aria-label="Âm lượng" /></div>
-        <div className="hud-actions"><button type="button" className="hud-icon-button" onClick={toggleSounds} aria-label={muted ? 'Bật hiệu ứng âm thanh' : 'Tắt hiệu ứng âm thanh'} title={muted ? 'Bật hiệu ứng âm thanh' : 'Tắt hiệu ứng âm thanh'}>{muted ? <VolumeX size={19} /> : <Volume2 size={19} />}</button><button type="button" className="hud-icon-button" onClick={toggleFullscreen} aria-label={fullscreen ? 'Thu nhỏ màn hình gameplay' : 'Phóng to màn hình gameplay'} title={fullscreen ? 'Thu nhỏ màn hình gameplay' : 'Phóng to màn hình gameplay'}>{fullscreen ? <Minimize size={19} /> : <Expand size={19} />}</button></div>
+        <div className="hud-actions"><button type="button" className="hud-icon-button" onClick={togglePause} disabled={!snapshot.started || ended} aria-label={snapshot.paused ? 'Resume' : 'Pause'} title={snapshot.paused ? 'Resume' : 'Pause'}>{snapshot.paused ? <Play size={19} /> : <Pause size={19} />}</button><button type="button" className="hud-icon-button" onClick={toggleSounds} aria-label={muted ? 'Bật hiệu ứng âm thanh' : 'Tắt hiệu ứng âm thanh'} title={muted ? 'Bật hiệu ứng âm thanh' : 'Tắt hiệu ứng âm thanh'}>{muted ? <VolumeX size={19} /> : <Volume2 size={19} />}</button><button type="button" className="hud-icon-button" onClick={toggleFullscreen} aria-label={fullscreen ? 'Thu nhỏ màn hình gameplay' : 'Phóng to màn hình gameplay'} title={fullscreen ? 'Thu nhỏ màn hình gameplay' : 'Phóng to màn hình gameplay'}>{fullscreen ? <Minimize size={19} /> : <Expand size={19} />}</button></div>
       </div>
       <div className="mission-track" aria-label={`Đã xử lý ${snapshot.destroyed + snapshot.missed} trên ${snapshot.total} từ`}><span style={{ width: `${snapshot.total ? (snapshot.destroyed + snapshot.missed) / snapshot.total * 100 : 0}%` }} /></div>
+      {snapshot.combo > 1 && <div className="combo-indicator" role="status">Combo x{snapshot.combo}</div>}
       <div className="canvas-wrap"><div className="canvas-stage"><canvas ref={canvasRef} width={FIELD.width} height={FIELD.height} aria-label="Trò chơi bảo vệ lâu đài" />
+        {snapshot.paused && <div className="center-overlay pause-overlay"><h2>Đã tạm dừng</h2><button className="button button-primary" onClick={togglePause}><Play size={18} /> Resume</button></div>}
         {snapshot.state === 'READY' && (snapshot.started
           ? <div className="center-overlay countdown-overlay"><span>SẴN SÀNG CHƯA?</span><strong key={snapshot.countdown} className={snapshot.countdown === 'GO!' ? 'go' : ''}>{snapshot.countdown}</strong><small>Chuẩn bị nghe từ đầu tiên</small></div>
-          : <div className="center-overlay start-overlay"><span className="eyebrow">MÀN CHƠI SẮP BẮT ĐẦU</span><h2>Nghe rõ, bắn chuẩn!</h2><p>Ưu tiên giọng người thật từ Wiktionary. Nếu thiếu bản thu hoặc mất mạng, game dùng giọng trên thiết bị.</p><span className="voice-status">🎙 Bản thu Wiktionary · Giọng dự phòng: {activeVoice ? `${activeVoice.name} · ${activeVoice.lang}` : 'mặc định trên thiết bị'}</span><div className="start-actions"><button className="button button-primary button-large" onClick={beginGame}><Volume2 size={20} /> {speechAvailable ? 'Bật âm thanh & bắt đầu' : 'Bắt đầu không có âm thanh'}</button><button className="button button-ghost preview-voice" onClick={() => speechService.preview()} disabled={!speechAvailable}><Volume1 size={18} /> Nghe thử từ “hello”</button></div></div>)}
-        {snapshot.state === 'PLAYING' && <div className="cannon-audio-controls"><button className="listen-button" onClick={() => replaySpeech()} disabled={!speechAvailable}><Volume2 size={18} /> Nghe lại</button><button className="listen-button listen-slow" onClick={() => replaySpeech(true)} disabled={!speechAvailable}><Volume1 size={18} /> Nghe chậm</button></div>}
+          : <div className="center-overlay start-overlay"><span className="eyebrow">MÀN CHƠI SẮP BẮT ĐẦU</span><h2>Nghe rõ, bắn chuẩn!</h2><p>Ưu tiên giọng người thật từ Wiktionary. Nếu thiếu bản thu hoặc mất mạng, game dùng giọng trên thiết bị.</p><span className="voice-status">🎙 Bản thu Wiktionary · Giọng dự phòng: {activeVoice ? `${activeVoice.name} · ${activeVoice.lang}` : 'mặc định trên thiết bị'}</span><div className="game-setup"><div role="group" aria-label="Chế độ luyện tập"><strong>CHẾ ĐỘ LUYỆN</strong><div>{forcedWords ? <span>Ôn lại từ sai · {selectedWords.length} từ</span> : ([['all', 'Tất cả từ'], ['weak', 'Từ yếu'], ['review', 'Ôn lại']] as const).map(([value, label]) => <button type="button" key={value} className={mode === value ? 'active' : ''} aria-pressed={mode === value} onClick={() => setMode(value)}>{label}</button>)}</div></div><div role="group" aria-label="Độ khó"><strong>ĐỘ KHÓ</strong><div>{([['easy', 'Easy'], ['normal', 'Normal'], ['hard', 'Hard'], ['custom', 'Custom']] as const).map(([value, label]) => <button type="button" key={value} className={difficulty === value ? 'active' : ''} aria-pressed={difficulty === value} onClick={() => changeDifficulty(value)}>{label}</button>)}</div></div></div><div className="start-actions"><button className="button button-primary button-large" onClick={beginGame}><Volume2 size={20} /> {speechAvailable ? 'Bật âm thanh & bắt đầu' : 'Bắt đầu không có âm thanh'}</button><button className="button button-ghost preview-voice" onClick={() => speechService.preview()} disabled={!speechAvailable}><Volume1 size={18} /> Nghe thử từ “hello”</button></div></div>)}
+        {snapshot.state === 'PLAYING' && <div className="cannon-audio-controls"><button className="listen-button" onClick={() => replaySpeech()} disabled={!speechAvailable || snapshot.paused}><Volume2 size={18} /> Nghe lại</button><button className="listen-button listen-slow" onClick={() => replaySpeech(true)} disabled={!speechAvailable || snapshot.paused}><Volume1 size={18} /> Nghe chậm</button></div>}
         {(snapshot.state === 'WORD_REVEALED' || snapshot.state === 'WORD_DESTROYED' || snapshot.state === 'WALL_HIT') && snapshot.activeWord && <div className={`translation-toast ${snapshot.state === 'WORD_DESTROYED' ? 'bursting' : ''} ${snapshot.state === 'WALL_HIT' ? 'missed' : ''}`} role="status"><small>{snapshot.state === 'WALL_HIT' ? 'BỎ LỠ · TỪ CẦN ĐIỀN' : snapshot.state === 'WORD_REVEALED' ? 'CHÍNH XÁC! TỪ VỪA NGHE LÀ' : 'PHÁ HỦY THÀNH CÔNG'}</small><strong>{snapshot.activeWord.word.toUpperCase()}</strong><span>{snapshot.activeWord.meaning}</span></div>}
-        {ended && <div className="center-overlay end-overlay"><div className="result-card"><span className="result-sparkle">{snapshot.state === 'VICTORY' ? '✦ ✨ ✦' : '✦ ✦ ✦'}</span><span className="eyebrow">{snapshot.state === 'VICTORY' ? 'XUẤT SẮC!' : 'HÀNH TRÌNH KẾT THÚC'}</span><h2 className={`result-announcement ${snapshot.state === 'VICTORY' ? 'win' : 'lose'}`}>{snapshot.state === 'VICTORY' ? 'VICTORY' : 'DEFEAT'}</h2><p>{snapshot.state === 'VICTORY' ? 'Bạn đã bảo vệ lâu đài thành công.' : 'Luyện thêm một chút và thử lại nhé!'}</p>{snapshot.state === 'GAME_OVER' && snapshot.missed > 0 && snapshot.activeWord && <div className="missed-answer">Từ vừa bỏ lỡ: <strong>{snapshot.activeWord.word.toUpperCase()}</strong><span>{snapshot.activeWord.meaning}</span></div>}<div className="result-stats"><div><strong>{snapshot.score}</strong><span>ĐIỂM</span></div><div><strong>{snapshot.destroyed}</strong><span>PHÁ HỦY</span></div><div><strong>{snapshot.missed}</strong><span>BỎ LỠ</span></div><div><strong>{accuracy}%</strong><span>CHÍNH XÁC</span></div></div>{snapshot.state === 'VICTORY' && <div className="result-time">Thời gian: {Math.round(snapshot.elapsed)} giây</div>}<div className="result-actions"><button className="button button-primary" onClick={onReplay}><RotateCcw size={18} /> Chơi lại</button><button className="button button-ghost" onClick={onHome}><Home size={18} /> Trang chủ</button></div></div></div>}
+        {ended && <div className="center-overlay end-overlay"><div className="result-card"><span className="result-sparkle">{snapshot.state === 'VICTORY' ? '✦ ✨ ✦' : '✦ ✦ ✦'}</span><span className="eyebrow">{snapshot.state === 'VICTORY' ? 'XUẤT SẮC!' : 'HÀNH TRÌNH KẾT THÚC'}</span><h2 className={`result-announcement ${snapshot.state === 'VICTORY' ? 'win' : 'lose'}`}>{snapshot.state === 'VICTORY' ? 'VICTORY' : 'DEFEAT'}</h2><p>{snapshot.state === 'VICTORY' ? 'Bạn đã bảo vệ lâu đài thành công.' : 'Luyện thêm một chút và thử lại nhé!'}</p>{snapshot.state === 'GAME_OVER' && snapshot.missed > 0 && snapshot.activeWord && <div className="missed-answer">Từ vừa bỏ lỡ: <strong>{snapshot.activeWord.word.toUpperCase()}</strong><span>{snapshot.activeWord.meaning}</span></div>}<div className="result-stats"><div><strong>{snapshot.score}</strong><span>ĐIỂM</span></div><div><strong>{snapshot.destroyed}</strong><span>PHÁ HỦY</span></div><div><strong>{snapshot.missed}</strong><span>BỎ LỠ</span></div><div><strong>{accuracy}%</strong><span>CHÍNH XÁC</span></div></div>{snapshot.state === 'VICTORY' && <div className="result-time">Thời gian: {Math.round(snapshot.elapsed)} giây</div>}<div className="word-review"><h3>Kết quả từng từ</h3>{snapshot.wordResults.map(result => <div className="word-review-row" key={result.wordId}><strong>{result.word.toUpperCase()}</strong><span>{result.outcome === 'perfect' ? '✓ Perfect' : result.outcome === 'missed' ? '✗ Missed' : `✓ Completed · ${result.wrongLetters} chữ sai`}</span><small>{result.outcome === 'missed' ? `${result.wrongLetters} chữ sai` : `${Math.round(result.correctLetters / (result.correctLetters + result.wrongLetters) * 100)}% chính xác`}</small></div>)}</div><div className="result-actions"><button className="button button-primary" onClick={onReplay}><RotateCcw size={18} /> Chơi lại</button>{reviewIds.length > 0 && <button className="button button-teal" onClick={() => onReview(reviewIds)}>Ôn lại từ sai</button>}<button className="button button-ghost" onClick={onHome}><Home size={18} /> Trang chủ</button></div></div></div>}
       </div>
       </div>
       <div className="game-controls"><div className="keyboard-hint"><span className="keyboard-icon">A</span><span>{snapshot.bufferedKeys > 0 ? `${snapshot.bufferedKeys} chữ đang chờ bắn` : 'Gõ nhanh cả từ, pháo sẽ bắn lần lượt'}</span></div><span className="controls-tip">Chọn giọng và tốc độ trên thanh tiến độ · Esc để thu nhỏ</span></div>
+      <VirtualKeyboard onLetter={letter => handleLetterInput(engineRef.current, letter)} disabled={snapshot.state !== 'PLAYING' || snapshot.paused} />
     </div>
+    {progressError && <div className="storage-error" role="alert">{progressError}</div>}
     <div className="game-footer"><span>🎧 Đeo tai nghe để nghe rõ hơn</span><span>Gõ đúng thứ tự · Mỗi chữ là một viên đạn</span><a href={recording?.pageURL ?? 'https://en.wiktionary.org/wiki/Wiktionary:Audio'} target="_blank" rel="noreferrer">{recording ? `Ghi âm: ${recording.fileName} · tác giả và giấy phép` : 'Nguồn ghi âm: Wiktionary / Wikimedia Commons'}</a></div>
   </div>
 }
 
 export default function GamePage(props: Props) {
   const [attempt, setAttempt] = useState(0)
-  return <GameSession key={`${props.set.id}-${attempt}`} {...props} onReplay={() => setAttempt(value => value + 1)} />
+  const [reviewWords, setReviewWords] = useState<VocabularyItem[] | null>(null)
+  return <GameSession key={`${props.set.id}-${attempt}`} {...props} forcedWords={reviewWords}
+    onReplay={() => { setReviewWords(null); setAttempt(value => value + 1) }}
+    onReview={ids => {
+      setReviewWords(props.set.words.filter(word => ids.includes(word.id)))
+      setAttempt(value => value + 1)
+    }} />
 }

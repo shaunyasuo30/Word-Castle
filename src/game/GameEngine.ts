@@ -1,7 +1,8 @@
 import { EXPLOSION_DURATION, FIELD, FINAL_WALL_HIT_DURATION, WALL_HIT_DURATION, FALL_SPEED } from './config'
 import { shuffle } from '../utils/shuffle'
+import { scoreWord } from './scoring'
 import type { VocabularyItem } from '../types/vocabulary'
-import type { Bullet, GameConfig, GameSnapshot, GameSoundEvent, GameState, Particle } from './types'
+import type { Bullet, FloatingFeedback, GameConfig, GameSnapshot, GameSoundEvent, GameState, Particle, WordResult } from './types'
 
 type Effect = 'correct' | 'wrong' | 'destroy' | 'wall'
 
@@ -11,6 +12,7 @@ export class GameEngine {
   readonly queue: VocabularyItem[]
   state: GameState = 'READY'
   started = false
+  paused = false
   word: VocabularyItem | null = null
   wordX = 500
   wordY = 65
@@ -18,6 +20,8 @@ export class GameEngine {
   bullet: Bullet | null = null
   pendingKeys: string[] = []
   particles: Particle[] = []
+  feedback: FloatingFeedback[] = []
+  muzzleFlash = 0
   wrongLetter = ''
   feedbackTimer = 0
   transitionTimer = 0
@@ -33,9 +37,15 @@ export class GameEngine {
   wrongKeys = 0
   elapsed = 0
   wordNumber = 0
+  combo = 0
+  bestCombo = 0
+  currentCorrectLetters = 0
+  currentWrongLetters = 0
+  wordResults: WordResult[] = []
   onChange: (snapshot: GameSnapshot) => void = () => {}
   onWord: (word: string) => void = () => {}
   onSound: (event: GameSoundEvent) => void = () => {}
+  onFinish: (snapshot: GameSnapshot) => void = () => {}
 
   constructor(words: VocabularyItem[], config: GameConfig) {
     this.config = { ...config }
@@ -49,10 +59,11 @@ export class GameEngine {
       ? this.countdownTimer > 0.95 ? String(Math.ceil(this.countdownTimer - 0.95)) : 'GO!'
       : ''
     return {
-      state: this.state, started: this.started, countdown, score: this.score, lives: this.lives,
+      state: this.state, paused: this.paused, started: this.started, countdown, score: this.score, lives: this.lives,
       destroyed: this.destroyed, missed: this.missed, correctKeys: this.correctKeys,
       wrongKeys: this.wrongKeys, total: this.total, elapsed: this.elapsed,
       wordNumber: this.wordNumber, activeWord: this.word, bufferedKeys: this.pendingKeys.length,
+      combo: this.combo, bestCombo: this.bestCombo, wordResults: [...this.wordResults],
     }
   }
 
@@ -67,6 +78,31 @@ export class GameEngine {
     if (this.state !== 'READY' || this.started) return
     this.started = true
     this.emit()
+  }
+
+  pause(): void {
+    if (!this.started || this.paused || this.state === 'GAME_OVER' || this.state === 'VICTORY') return
+    this.paused = true
+    this.emit()
+  }
+
+  resume(): void {
+    if (!this.paused) return
+    this.paused = false
+    this.emit()
+  }
+
+  private showFeedback(text: string, color: string, x = this.wordX, y = this.wordY): void {
+    this.feedback.push({ text, x, y, color, life: 0.75, maxLife: 0.75 })
+  }
+
+  private recordWord(outcome: WordResult['outcome'], score = 0): void {
+    if (!this.word) return
+    this.wordResults.push({
+      wordId: this.word.id, word: this.word.word, meaning: this.word.meaning,
+      outcome, correctLetters: this.currentCorrectLetters,
+      wrongLetters: this.currentWrongLetters, score,
+    })
   }
 
   getTargetPoint(): { x: number; y: number } {
@@ -87,6 +123,7 @@ export class GameEngine {
       this.state = this.missed === 0 ? 'VICTORY' : 'GAME_OVER'
       this.onSound(this.state === 'VICTORY' ? 'victory' : 'game-over')
       this.emit()
+      this.onFinish(this.snapshot)
       return
     }
     this.word = next
@@ -94,6 +131,8 @@ export class GameEngine {
     this.wordX = 400 + Math.random() * 200
     this.wordY = 55
     this.letterIndex = 0
+    this.currentCorrectLetters = 0
+    this.currentWrongLetters = 0
     this.wrongLetter = ''
     this.feedbackTimer = 0
     this.bullet = null
@@ -104,7 +143,7 @@ export class GameEngine {
   }
 
   shoot(character: string): boolean {
-    if (this.state !== 'PLAYING' || this.pendingKeys.length >= 32 || !/^[a-z]$/i.test(character)) return false
+    if (this.paused || this.state !== 'PLAYING' || this.pendingKeys.length >= 32 || !/^[a-z]$/i.test(character)) return false
     this.pendingKeys.push(character.toUpperCase())
     this.launchNextBullet()
     this.emit()
@@ -121,10 +160,12 @@ export class GameEngine {
       character,
     }
     this.recoil = 0.16
+    this.muzzleFlash = 0.09
     this.onSound('shoot')
   }
 
   update(rawDt: number): void {
+    if (this.paused) return
     const dt = Math.min(Math.max(rawDt, 0), 0.05)
     this.updateEffects(dt)
 
@@ -156,6 +197,7 @@ export class GameEngine {
           this.state = 'GAME_OVER'
           this.onSound('game-over')
           this.emit()
+          this.onFinish(this.snapshot)
         } else this.startNextWord()
       }
       return
@@ -199,6 +241,10 @@ export class GameEngine {
     // The projectile's character is judged only at collision, never at keydown.
     if (character === this.word.word[this.letterIndex].toUpperCase()) {
       this.correctKeys++
+      this.currentCorrectLetters++
+      this.combo++
+      this.bestCombo = Math.max(this.bestCombo, this.combo)
+      if (this.combo > 1) this.showFeedback(`Combo x${this.combo}`, '#ffe89a', this.wordX, this.wordY - 23)
       this.onSound('hit')
       this.letterIndex++
       this.wrongLetter = ''
@@ -207,12 +253,18 @@ export class GameEngine {
       if (this.letterIndex === this.word.word.length) {
         this.state = 'WORD_REVEALED'
         this.destroyed++
-        this.score += this.config.baseScore
+        const points = scoreWord(this.config.baseScore, this.combo)
+        this.score += points
+        this.recordWord(this.currentWrongLetters === 0 ? 'perfect' : 'completed', points)
+        this.showFeedback(`+${points}`, '#fff0a5', this.wordX, this.wordY - 50)
+        if (this.currentWrongLetters === 0) this.showFeedback('Perfect!', '#8bf3c7', this.wordX, this.wordY - 82)
         this.transitionTimer = 1.15
         this.pendingKeys = []
       }
     } else {
       this.wrongKeys++
+      this.currentWrongLetters++
+      this.combo = 0
       this.onSound('wrong')
       this.wrongLetter = character
       this.feedbackTimer = 0.43
@@ -228,6 +280,9 @@ export class GameEngine {
     this.pendingKeys = []
     this.missed++
     this.lives--
+    this.combo = 0
+    this.recordWord('missed')
+    this.showFeedback('Miss!', '#ff9c9f', this.wordX, FIELD.wallY - 85)
     this.shake = this.lives === 0 ? 0.9 : 0.46
     this.transitionTimer = this.lives === 0 ? FINAL_WALL_HIT_DURATION : WALL_HIT_DURATION
     this.burst(this.wordX, FIELD.wallY - 12, 'wall', this.lives === 0 ? 74 : 52)
@@ -241,6 +296,12 @@ export class GameEngine {
     this.aimAngle += (desiredAngle - this.aimAngle) * (1 - Math.exp(-14 * dt))
     this.shake = Math.max(0, this.shake - dt)
     this.recoil = Math.max(0, this.recoil - dt)
+    this.muzzleFlash = Math.max(0, this.muzzleFlash - dt)
+    this.feedback = this.feedback.filter(item => item.life > 0)
+    for (const item of this.feedback) {
+      item.life -= dt
+      item.y -= 24 * dt
+    }
     this.particles = this.particles.filter(p => p.life > 0)
     for (const p of this.particles) {
       p.x += p.vx * dt

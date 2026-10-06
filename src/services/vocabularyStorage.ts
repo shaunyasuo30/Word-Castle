@@ -6,7 +6,7 @@ const SAMPLE_MIGRATION_KEY = 'word-castle:samples:v2'
 
 export const demoSet = basicSet
 
-function isSet(value: unknown): value is VocabularySet {
+export function isSet(value: unknown): value is VocabularySet {
   if (!value || typeof value !== 'object') return false
   const item = value as Partial<VocabularySet>
   return typeof item.id === 'string' && typeof item.name === 'string' &&

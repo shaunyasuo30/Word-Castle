@@ -374,16 +374,22 @@ function explodingWord(ctx: CanvasRenderingContext2D, engine: GameEngine): void 
   ctx.restore()
 }
 
-export function renderGame(ctx: CanvasRenderingContext2D, engine: GameEngine, time: number, theme: Theme = 'night'): void {
+export function renderGame(ctx: CanvasRenderingContext2D, engine: GameEngine, time: number, theme: Theme = 'night', reducedMotion = false): void {
   ctx.save()
   ctx.clearRect(0, 0, W, H)
-  if (engine.shake > 0) ctx.translate((Math.random() - 0.5) * engine.shake * 13, (Math.random() - 0.5) * engine.shake * 11)
+  if (!reducedMotion && engine.shake > 0) ctx.translate((Math.random() - 0.5) * engine.shake * 13, (Math.random() - 0.5) * engine.shake * 11)
   background(ctx, time, theme)
   ctx.fillStyle = '#efc39b44'
   ctx.fillRect(0, FIELD.wallY - 1, W, 2)
   fallingWord(ctx, engine, time)
   wall(ctx, engine.lives, time)
   cannon(ctx, engine)
+  if (engine.muzzleFlash > 0 && !reducedMotion) {
+    ctx.fillStyle = `rgba(255, 232, 158, ${engine.muzzleFlash / 0.09})`
+    ctx.beginPath()
+    ctx.arc(FIELD.cannonX + Math.sin(engine.aimAngle) * 76, FIELD.cannonY - Math.cos(engine.aimAngle) * 76, 15, 0, Math.PI * 2)
+    ctx.fill()
+  }
   if (engine.bullet) {
     const b = engine.bullet
     ctx.strokeStyle = '#ffe59a9c'
@@ -403,10 +409,18 @@ export function renderGame(ctx: CanvasRenderingContext2D, engine: GameEngine, ti
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
     ctx.fillText(b.character, b.x, b.y + 1)
   }
-  for (const p of engine.particles) {
+  for (const p of reducedMotion ? [] : engine.particles) {
     ctx.globalAlpha = Math.max(0, p.life / p.maxLife)
     ctx.fillStyle = p.color
     ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill()
+  }
+  ctx.globalAlpha = 1
+  for (const item of engine.feedback) {
+    ctx.globalAlpha = reducedMotion ? 1 : Math.max(0, item.life / item.maxLife)
+    ctx.fillStyle = item.color
+    ctx.font = '800 26px "Baloo 2", sans-serif'
+    ctx.textAlign = 'center'
+    ctx.fillText(item.text, item.x, item.y)
   }
   ctx.globalAlpha = 1
   if (engine.state === 'WORD_DESTROYED' || engine.state === 'WALL_HIT') {
@@ -417,7 +431,8 @@ export function renderGame(ctx: CanvasRenderingContext2D, engine: GameEngine, ti
     ctx.shadowColor = '#ffaf72'; ctx.shadowBlur = 20
     ctx.font = '800 44px "Baloo 2", sans-serif'
     ctx.textAlign = 'center'
-    ctx.fillText('+100', engine.wordX, engine.wordY + 35 - (EXPLOSION_DURATION - engine.transitionTimer) * 38)
+    const latest = engine.wordResults.at(-1)
+    ctx.fillText(`+${latest?.score ?? engine.config.baseScore}`, engine.wordX, engine.wordY + 35 - (EXPLOSION_DURATION - engine.transitionTimer) * 38)
     ctx.shadowBlur = 0
   }
   ctx.restore()

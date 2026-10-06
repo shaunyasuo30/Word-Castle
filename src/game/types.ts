@@ -27,8 +27,30 @@ export interface Particle {
   size: number
 }
 
+export type WordOutcome = 'perfect' | 'completed' | 'missed'
+
+export interface WordResult {
+  wordId: string
+  word: string
+  meaning: string
+  outcome: WordOutcome
+  correctLetters: number
+  wrongLetters: number
+  score: number
+}
+
+export interface FloatingFeedback {
+  text: string
+  x: number
+  y: number
+  color: string
+  life: number
+  maxLife: number
+}
+
 export interface GameSnapshot {
   state: GameState
+  paused: boolean
   started: boolean
   countdown: string
   score: number
@@ -42,4 +64,7 @@ export interface GameSnapshot {
   wordNumber: number
   activeWord: VocabularyItem | null
   bufferedKeys: number
+  combo: number
+  bestCombo: number
+  wordResults: WordResult[]
 }

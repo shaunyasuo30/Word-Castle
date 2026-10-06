@@ -4,6 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import { soundEffects } from './services/soundEffects'
+import { gameHistoryStorage } from './services/gameHistoryStorage'
 
 beforeEach(() => {
   localStorage.clear()
@@ -14,6 +15,20 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
 describe('vocabulary flow', () => {
+  it('shows saved learning totals on the Statistics page', async () => {
+    gameHistoryStorage.add({
+      id: 'game-1', playedAt: '2026-10-06T00:00:00.000Z', setId: 'basic-english', setName: 'Basic English',
+      mode: 'all', difficulty: 'normal', score: 105, accuracy: 80, completed: 1, missed: 0, duration: 12,
+      wordResults: [{ wordId: 'demo-apple', word: 'apple', meaning: 'quả táo', outcome: 'completed', correctLetters: 4, wrongLetters: 1, score: 105 }],
+    })
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Thống kê' }))
+    expect(screen.getByText('Từ cần luyện thêm')).toBeTruthy()
+    expect(screen.getByText('80%')).toBeTruthy()
+    expect(screen.getByText(/Basic English/)).toBeTruthy()
+  })
+
   it('plays the button cue across pages but not for non-button clicks', async () => {
     const user = userEvent.setup()
     const play = vi.spyOn(soundEffects, 'play').mockImplementation(() => {})

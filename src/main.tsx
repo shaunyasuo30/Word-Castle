@@ -8,6 +8,7 @@ import './theme.css'
 import './game-controls.css'
 import './atmosphere.css'
 import './brand.css'
+import './feature-expansion.css'
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

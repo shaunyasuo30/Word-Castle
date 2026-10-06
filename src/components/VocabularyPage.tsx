@@ -1,19 +1,22 @@
 import BrandMark from './BrandMark'
-import { useState } from 'react'
+import { useRef, useState, type ChangeEvent } from 'react'
 import { ArrowLeft, BookOpen, Check, Edit3, Play, Plus, Save, Trash2, X } from 'lucide-react'
 import type { VocabularyItem, VocabularySet } from '../types/vocabulary'
 import { MAX_WORDS_PER_SET } from '../data/sampleSets'
+import { exportSetJson, importCsvIntoSet, importSetJson, validateVocabularyEntry, type ImportSummary } from '../services/vocabularyTransfer'
+import { backupStorage } from '../services/backupStorage'
 
 interface Props {
   sets: VocabularySet[]
   onChange: (sets: VocabularySet[]) => void
   onBack: () => void
   onPlay: (id: string) => void
+  onRestore?: (sets: VocabularySet[]) => void
 }
 
 const WORDS_PER_PAGE = 50
 
-export default function VocabularyPage({ sets, onChange, onBack, onPlay }: Props) {
+export default function VocabularyPage({ sets, onChange, onBack, onPlay, onRestore }: Props) {
   const [selectedId, setSelectedId] = useState(sets[0]?.id ?? '')
   const [newSetName, setNewSetName] = useState('')
   const [word, setWord] = useState('')
@@ -22,6 +25,10 @@ export default function VocabularyPage({ sets, onChange, onBack, onPlay }: Props
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
   const [listPage, setListPage] = useState(0)
+  const [transferMessage, setTransferMessage] = useState('')
+  const csvInput = useRef<HTMLInputElement>(null)
+  const jsonInput = useRef<HTMLInputElement>(null)
+  const backupInput = useRef<HTMLInputElement>(null)
   const selected = sets.find(set => set.id === selectedId) ?? sets[0]
   const filteredWords = selected?.words.map((item, index) => ({ item, index })).filter(({ item }) =>
     `${item.word} ${item.meaning}`.toLocaleLowerCase('vi-VN').includes(query.trim().toLocaleLowerCase('vi-VN'))) ?? []
@@ -62,12 +69,14 @@ export default function VocabularyPage({ sets, onChange, onBack, onPlay }: Props
     const translated = meaning.trim()
     if (!/^[a-z]+$/.test(normalized)) { setError('Từ tiếng Anh chỉ gồm các chữ A–Z, không có khoảng trắng.'); return }
     if (!translated) { setError('Hãy nhập nghĩa tiếng Việt.'); return }
+    const entry = validateVocabularyEntry(word, meaning)
+    if (!entry) { setError('Từ hoặc nghĩa vượt quá độ dài cho phép.'); return }
     if (selected.words.some(item => item.word.toLowerCase() === normalized && item.id !== editingId)) {
       setError('Từ này đã có trong bộ từ.'); return
     }
     const words = editingId
-      ? selected.words.map(item => item.id === editingId ? { ...item, word: normalized, meaning: translated } : item)
-      : [...selected.words, { id: crypto.randomUUID(), word: normalized, meaning: translated }]
+      ? selected.words.map(item => item.id === editingId ? { ...item, ...entry } : item)
+      : [...selected.words, { id: crypto.randomUUID(), ...entry }]
     updateSet({ ...selected, words })
     setWord(''); setMeaning(''); setEditingId(null); setError('')
   }
@@ -80,6 +89,48 @@ export default function VocabularyPage({ sets, onChange, onBack, onPlay }: Props
     setEditingId(null); setWord(''); setMeaning(''); setError('')
   }
 
+  function download(name: string, contents: string): void {
+    const url = URL.createObjectURL(new Blob([contents], { type: 'application/json;charset=utf-8' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = name
+    link.click()
+    setTimeout(() => URL.revokeObjectURL(url), 0)
+  }
+
+  function describeImport(summary: ImportSummary): string {
+    return `Imported: ${summary.imported} · Skipped: ${summary.skipped} · Invalid: ${summary.invalid}${summary.messages.length ? ` — ${summary.messages.join(' ')}` : ''}`
+  }
+
+  async function upload(event: ChangeEvent<HTMLInputElement>, kind: 'csv' | 'json' | 'backup'): Promise<void> {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    try {
+      const contents = await file.text()
+      if (kind === 'csv') {
+        if (!selected) throw new Error('Hãy tạo bộ từ trước khi nhập CSV.')
+        const result = importCsvIntoSet(contents, selected)
+        updateSet(result.set)
+        setTransferMessage(describeImport(result.summary))
+      } else if (kind === 'json') {
+        const result = importSetJson(contents)
+        onChange([...sets, result.set])
+        setSelectedId(result.set.id)
+        setTransferMessage(describeImport(result.summary))
+      } else {
+        if (!window.confirm('Khôi phục bản sao lưu sẽ thay thế kho từ, thống kê, lịch sử và cài đặt hiện tại. Tiếp tục?')) return
+        const restored = backupStorage.restore(contents)
+        if (onRestore) onRestore(restored)
+        else onChange(restored)
+        setSelectedId(restored[0]?.id ?? '')
+        setTransferMessage('Đã khôi phục bản sao lưu.')
+      }
+    } catch (error) {
+      setTransferMessage(error instanceof Error ? error.message : 'Không thể đọc tệp đã chọn.')
+    }
+  }
+
   return <div className="page-shell library-page">
     <header className="topbar">
       <button className="back-button" onClick={onBack}><ArrowLeft size={19} /> Trang chủ</button>
@@ -90,6 +141,16 @@ export default function VocabularyPage({ sets, onChange, onBack, onPlay }: Props
       <div><span className="eyebrow">XÂY KHO TỪ CỦA BẠN</span><h1>Kho từ vựng <span>📚</span></h1><p>Tạo bộ từ riêng và biến mỗi chữ cái thành một chiến thắng.</p></div>
       <div className="heading-count"><strong>{sets.reduce((sum, set) => sum + set.words.length, 0)}</strong><span>TỪ ĐÃ LƯU</span></div>
     </div>
+    <div className="transfer-panel panel"><strong>Dữ liệu từ vựng</strong><div>
+      <button type="button" onClick={() => selected && download(`${selected.name}.json`, exportSetJson(selected))} disabled={!selected}>Xuất bộ (JSON)</button>
+      <button type="button" onClick={() => csvInput.current?.click()} disabled={!selected}>Nhập CSV vào bộ</button>
+      <button type="button" onClick={() => jsonInput.current?.click()}>Nhập bộ JSON</button>
+      <button type="button" onClick={() => download('word-castle-backup.json', backupStorage.export())}>Sao lưu toàn bộ</button>
+      <button type="button" onClick={() => backupInput.current?.click()}>Khôi phục sao lưu</button>
+    </div><input ref={csvInput} type="file" accept=".csv,text/csv" aria-label="Chọn tệp CSV" onChange={event => void upload(event, 'csv')} hidden />
+    <input ref={jsonInput} type="file" accept=".json,application/json" aria-label="Chọn tệp bộ từ JSON" onChange={event => void upload(event, 'json')} hidden />
+    <input ref={backupInput} type="file" accept=".json,application/json" aria-label="Chọn tệp sao lưu" onChange={event => void upload(event, 'backup')} hidden />
+    {transferMessage && <p role="status">{transferMessage}</p>}</div>
     <div className="library-layout">
       <aside className="sets-panel panel">
         <div className="panel-title"><h2>Bộ từ của bạn</h2><span>{sets.length} bộ</span></div>
