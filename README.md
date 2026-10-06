@@ -10,7 +10,7 @@ Dự án dùng React, TypeScript, Vite và Canvas. Bộ từ, lịch sử chơi 
 - Tra từ tiếng Anh trong **Kho từ vựng**: hiện nghĩa tiếng Việt, phiên âm, phát âm, loại từ, định nghĩa và ví dụ. Có thể thêm kết quả vào bộ từ đang học.
 - Nhiều chế độ luyện, mức khó, điểm, combo, thống kê và ôn lại từ sai.
 - Giọng UK/US, bản ghi phát âm khi có, giọng đọc của trình duyệt khi cần; có nút nghe lại và nghe chậm.
-- Bàn phím chữ ảo trên màn hình cảm ứng, giao diện cho điện thoại và chế độ ngày/đêm.
+- Bàn phím chữ ảo trên màn hình cảm ứng, giao diện cho điện thoại, chế độ ngày/đêm và rồng bay khạc lửa trong cảnh chơi.
 
 ## Chạy trên máy
 

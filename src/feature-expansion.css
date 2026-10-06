@@ -46,7 +46,11 @@ html[data-theme='night'] .transfer-panel p { color: #95ebc9; }
 .weak-word-list small { margin-left: auto; }
 .history-list > div { justify-content: space-between; }
 html[data-theme='night'] .statistics-page { color: #f9f4ff; }
+html[data-theme='night'] body:has(.statistics-page) { background: #141f40; }
+html[data-theme='night'] .statistics-page .topbar { border-color: #ffffff2b; }
 html[data-theme='night'] .statistics-page .panel { background: #26365d; border-color: #7080aa70; }
+html[data-theme='night'] .statistics-page .stat-card span,
+html[data-theme='night'] .statistics-page .stats-section p { color: #c0cbe2; }
 html[data-theme='night'] .weak-word-list > div, html[data-theme='night'] .history-list > div { background: #1b294b; }
 html[data-theme='night'] .statistics-page .back-button, html[data-theme='night'] .statistics-page .brand-mini, html[data-theme='night'] .statistics-page h1 { color: #f9f4ff; }
 @media (max-width: 760px), (hover: none) and (pointer: coarse) {

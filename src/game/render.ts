@@ -1,6 +1,7 @@
 import { EXPLOSION_DURATION, FIELD, FINAL_WALL_HIT_DURATION, WALL_HIT_DURATION } from './config'
 import type { GameEngine } from './GameEngine'
 import type { Theme } from '../theme'
+import { drawDragon } from './dragon'
 
 const W = FIELD.width
 const H = FIELD.height
@@ -379,6 +380,9 @@ export function renderGame(ctx: CanvasRenderingContext2D, engine: GameEngine, ti
   ctx.clearRect(0, 0, W, H)
   if (!reducedMotion && engine.shake > 0) ctx.translate((Math.random() - 0.5) * engine.shake * 13, (Math.random() - 0.5) * engine.shake * 11)
   background(ctx, time, theme)
+  if (engine.started && engine.state !== 'GAME_OVER' && engine.state !== 'VICTORY') {
+    drawDragon(ctx, time, theme, reducedMotion)
+  }
   ctx.fillStyle = '#efc39b44'
   ctx.fillRect(0, FIELD.wallY - 1, W, 2)
   fallingWord(ctx, engine, time)
